@@ -1,47 +1,28 @@
-# Environment variables
+# Secrets
 .env
+dashboard/.env
 .env*.local
 
 # Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
 .venv/
-ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+__pycache__/
+*.pyc
+*.py[cod]
 *.egg-info/
-.installed.cfg
-*.egg
 
 # Node
 node_modules/
 dist/
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Broker files
+# Broker (generated)
 broker/passwd
 broker/data/
 
-# Server databases
+# Server databases (generated)
 server/*.db
-*.sqlite
-*.sqlite3
-*.db
+server/*.db-*
 
+# Test output
+test-results/
+playwright-report/
