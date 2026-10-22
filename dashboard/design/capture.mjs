@@ -144,9 +144,13 @@ for (const [width, height] of SIZES) {
   pages.push({ page: await ctx.newPage(), width, height, ctx });
 }
 
+const overflow = [];
+
 async function shoot(name, { light = false } = {}) {
   for (const { page, width, height } of pages) {
     if (light) await setTheme(page, "light");
+    const wide = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (wide > 0) overflow.push(`${name} at ${width}px: ${wide}px horizontal scroll`);
     const file = path.join(OUT, `${name}-${width}x${height}.png`);
     await page.screenshot({ path: file });
     if (light) await setTheme(page, "dark");
@@ -198,7 +202,15 @@ try {
   await ack("bed2");
   send("bed2", "1");
   await sleep(3000);
-  if (phase === "after") await shoot("05-acknowledged");
+  if (phase === "after") {
+    await shoot("05-acknowledged");
+    for (const [tab, name] of [["stats", "09-statistics-tab"], ["about", "10-legend-tab"]]) {
+      await Promise.all(pages.map(({ page }) => page.getByTestId(`tab-${tab}`).click()));
+      await sleep(500);
+      await shoot(name);
+    }
+    await Promise.all(pages.map(({ page }) => page.getByTestId("tab-activity").click()));
+  }
 
   send("bed1", "r");
   await sleep(4000);
@@ -211,6 +223,8 @@ try {
   await stopServer();
   await sleep(7000);
   await shoot("08-flask-down");
+  if (phase === "after" && overflow.length) throw new Error("horizontal scroll:\n  " + overflow.join("\n  "));
+  if (phase === "after") console.log("no horizontal scroll in any state or size");
 } catch (err) {
   failed = true;
   console.error("capture failed:", err.message);

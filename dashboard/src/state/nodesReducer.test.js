@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
+  HR_HISTORY_MS,
+  MAX_EVENTS,
+  ackResponse,
   ackUnconfirmed,
   activeAlert,
+  alertSince,
+  appendHr,
   displayLevel,
   heartbeatStale,
   initialState,
+  isPulsing,
   nodesReducer,
+  pushEvent,
+  ruleFallback,
 } from "./nodesReducer.js";
 
 const status = (level, extra = {}) =>
@@ -138,5 +146,121 @@ describe("selectors", () => {
     expect(ackUnconfirmed(n, 15001)).toBe(true);
     expect(ackUnconfirmed({ ...n, alerts: { urgent: null, critical: null } }, 99999)).toBe(false);
     expect(ackUnconfirmed({ ...n, ackPendingSince: null }, 99999)).toBe(false);
+  });
+});
+
+describe("HR history buffer", () => {
+  it("keeps only the last 2 minutes of samples", () => {
+    let h = [];
+    for (let t = 0; t <= 180_000; t += 3000) h = appendHr(h, t, 70 + (t % 7));
+    expect(h[0].at).toBe(60_000);
+    expect(h.at(-1).at).toBe(180_000);
+    expect(h.every((s) => s.at >= 180_000 - HR_HISTORY_MS)).toBe(true);
+  });
+
+  it("ignores missing or non-numeric HR", () => {
+    const h = [{ at: 0, hr: 70 }];
+    expect(appendHr(h, 3000, null)).toBe(h);
+    expect(appendHr(h, 3000, "80")).toBe(h);
+    expect(appendHr(h, 3000, NaN)).toBe(h);
+  });
+
+  it("routine messages feed the buffer", () => {
+    const s = run(
+      msg("icu/bed1/status/routine", status("routine", { hr: 80 }), false, 1000),
+      msg("icu/bed1/status/routine", status("routine", { hr: 82 }), false, 4000),
+    );
+    expect(s.nodes.bed1.hrHistory).toEqual([{ at: 1000, hr: 80 }, { at: 4000, hr: 82 }]);
+  });
+});
+
+describe("activity feed", () => {
+  it("records live alerts, acknowledgements, offline and online, newest first", () => {
+    const s = run(
+      msg("icu/bed1/online", "online", true, 0),
+      msg("icu/bed1/status/critical", status("critical"), false, 1000),
+      msg("icu/bed1/status/urgent", "", false, 2000),
+      msg("icu/bed1/status/critical", "", false, 2001),
+      msg("icu/bed1/online", "offline", false, 3000),
+      msg("icu/bed1/online", "online", false, 4000),
+    );
+    expect(s.events.map((e) => e.kind)).toEqual(["online", "offline", "ack", "alert"]);
+    const ack = s.events[2];
+    expect(ack).toMatchObject({ node: "bed1", level: "critical", alertTs: "2026-10-25T10:02:11", at: 2001 });
+    expect(s.nodes.bed1.lastAck).toEqual({ level: "critical", alertTs: "2026-10-25T10:02:11", at: 2001 });
+  });
+
+  it("acknowledging urgent + critical logs one event for the highest level", () => {
+    const s = run(
+      msg("icu/bed1/status/urgent", status("urgent")),
+      msg("icu/bed1/status/critical", status("critical")),
+      msg("icu/bed1/status/urgent", ""),
+      msg("icu/bed1/status/critical", ""),
+    );
+    expect(s.events.filter((e) => e.kind === "ack")).toHaveLength(1);
+    expect(s.nodes.bed1.lastAck.level).toBe("critical");
+  });
+
+  it("retained messages on page load are not news", () => {
+    const s = run(msg("icu/bed1/online", "offline", true), msg("icu/bed1/status/urgent", status("urgent"), true));
+    expect(s.events).toEqual([]);
+  });
+
+  it("caps the list at 50 events with unique ids", () => {
+    let s = initialState;
+    for (let i = 0; i < 60; i++) s = pushEvent(s, { kind: "online", node: "bed1", at: i });
+    expect(s.events).toHaveLength(MAX_EVENTS);
+    expect(s.events[0].at).toBe(59);
+    expect(new Set(s.events.map((e) => e.id)).size).toBe(MAX_EVENTS);
+  });
+
+  it("TICK logs heartbeat lost once, and a heartbeat brings it back", () => {
+    let s = run(msg("icu/bed1/online", "online", true, 0), msg("icu/bed1/heartbeat", "{}", false, 1000));
+    s = nodesReducer(s, { type: "TICK", now: 20_000 });
+    expect(s.events).toEqual([]);
+    s = nodesReducer(s, { type: "TICK", now: 26_001 });
+    s = nodesReducer(s, { type: "TICK", now: 27_001 });
+    expect(s.events.map((e) => e.kind)).toEqual(["heartbeat-lost"]);
+    s = nodesReducer(s, msg("icu/bed1/heartbeat", "{}", false, 28_000));
+    expect(s.events.map((e) => e.kind)).toEqual(["heartbeat-back", "heartbeat-lost"]);
+    expect(s.nodes.bed1.heartbeatLost).toBe(false);
+  });
+});
+
+describe("alert timing and response", () => {
+  it("alertSince uses the alert's own timestamp, never in the future", () => {
+    const s = run(msg("icu/bed1/status/critical", status("critical"), false, 5000));
+    const ts = new Date(2026, 9, 25, 10, 2, 11).getTime();
+    expect(alertSince(s.nodes.bed1, ts + 42_000)).toBe(ts);
+    expect(alertSince(s.nodes.bed1, ts - 1000)).toBe(ts - 1000);
+    const bad = run(msg("icu/bed1/status/critical", status("critical", { ts: "?" }), false, 5000));
+    expect(alertSince(bad.nodes.bed1, 9000)).toBe(5000);
+  });
+
+  it("pulses for the first 10 s of a live alert only", () => {
+    const live = run(msg("icu/bed1/status/critical", status("critical"), false, 1000)).nodes.bed1;
+    expect(isPulsing(live, 10_999)).toBe(true);
+    expect(isPulsing(live, 11_000)).toBe(false);
+    const retained = run(msg("icu/bed1/status/critical", status("critical"), true, 1000)).nodes.bed1;
+    expect(isPulsing(retained, 1001)).toBe(false);
+  });
+
+  it("ackResponse finds the server's response time for the acknowledged alert", () => {
+    const s = run(msg("icu/bed1/status/critical", status("critical")), msg("icu/bed1/status/critical", ""));
+    const n = s.nodes.bed1;
+    expect(ackResponse(n, null)).toBeNull();
+    expect(ackResponse(n, [{ node: "bed1", alert_ts: "2026-10-25T10:02:11", response_s: null }])).toBeNull();
+    expect(ackResponse(n, [{ node: "bed1", alert_ts: "2026-10-25T10:02:11", response_s: 8.2 }])).toBe(8.2);
+    expect(ackResponse(n, [{ node: "bed2", alert_ts: "2026-10-25T10:02:11", response_s: 8.2 }])).toBeNull();
+  });
+
+  it("rule fallback needs two rule-shaped outputs in a row", () => {
+    const rule = { p: { routine: 0.05, urgent: 0.9, critical: 0.05 } };
+    let s = run(msg("icu/bed1/status/routine", status("urgent", rule)));
+    expect(ruleFallback(s.nodes.bed1)).toBe(false);
+    s = nodesReducer(s, msg("icu/bed1/status/routine", status("urgent", rule)));
+    expect(ruleFallback(s.nodes.bed1)).toBe(true);
+    s = nodesReducer(s, msg("icu/bed1/status/routine", status("urgent")));
+    expect(ruleFallback(s.nodes.bed1)).toBe(false);
   });
 });

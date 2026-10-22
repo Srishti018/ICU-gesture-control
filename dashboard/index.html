@@ -1,9 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ICU Nurse Station</title>
+    <title>ICU Fusion · Nurse Station</title>
+    <script>
+      // Apply the saved theme before first paint (same rules as src/hooks/useTheme.js).
+      (function () {
+        var theme = null;
+        try {
+          theme = localStorage.getItem("icu-dashboard-theme");
+        } catch (e) {}
+        if (theme !== "light" && theme !== "dark") {
+          theme = window.matchMedia && matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        }
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
