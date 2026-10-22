@@ -1,0 +1,13 @@
+# Node runtime (laptop and Pi). Install: .venv/bin/pip install -r node/requirements.txt
+# The Pi (aarch64, Python 3.11) keeps numpy<2 as the Role A plan requires; the laptop
+# venv shares numpy with the ML stack (scipy/pandas/scikit-learn), which needs numpy 2.
+numpy<2; platform_machine == "aarch64"
+numpy>=1.24; platform_machine != "aarch64"
+opencv-python-headless>=4.8
+mediapipe>=0.10.9
+paho-mqtt>=2.0
+python-dotenv>=1.0
+smbus2>=0.4
+scipy>=1.10
+flask>=3.0
+pytest>=8.0

@@ -1,0 +1,10 @@
+{
+  "min_hand_size_px": 10.0,
+  "finger_angle_lo": 120.0,
+  "finger_angle_hi": 165.0,
+  "thumb_lo": 0.35,
+  "thumb_hi": 0.70,
+  "upright_lo": 0.8,
+  "upright_hi": 1.5,
+  "calibration": "plan defaults; not calibrated yet"
+}

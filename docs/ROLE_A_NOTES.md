@@ -36,7 +36,16 @@ Not set up (no SD card). See `docs/HARDWARE_DAY.md`.
 
 ## Decisions
 
-To be filled in Phase 1 (MediaPipe API, camera, OLED driver).
+| Topic | Decision | Why |
+| --- | --- | --- |
+| MediaPipe API | **Tasks `HandLandmarker`**, VIDEO mode, 320×240 inference; model `~/icu-data/models/hand_landmarker.task` (float16). `node/vision/hands.py` falls back to `mp.solutions.hands` (`model_complexity=0`) automatically if the Tasks API is unavailable. | The laptop's MediaPipe 1.1.1 has no `mp.solutions` (removed in 1.x). The Pi may get a different wheel, hence the fallback. |
+| NumPy | `node/requirements.txt` pins `numpy<2` only on `aarch64` (Pi); the laptop keeps NumPy 2.x | The laptop `.venv` is shared with the ML stack (SciPy 1.18, pandas 3, scikit-learn 1.9), which needs NumPy 2. MediaPipe 1.1.1 works with NumPy 2. |
+| OpenCV | `opencv-python-headless` (ours) + `opencv-contrib-python` (pulled in by MediaPipe) both installed; `cv2` 5.0 imports fine | No `imshow` is used anywhere outside `node/tools/`. |
+| Camera | USB webcam via OpenCV V4L2, MJPG, 640×480, buffer 1 | Laptop: HP Wide Vision HD (`/dev/video0`). |
+| Tremor | Index fingertip (8) **relative to the wrist (0)**, divided by the hand size (wrist→middle MCP) per frame; per 3-s window `tremor = (std(x) + std(y)) / 2` over hand frames; ≥ 5 hand frames, else 0 | The prototype's wrist-relative, size-normalised fingertip (whole-hand movement and camera distance don't count as tremor), combined as the plan's §8.2 formula. It is tremor **amplitude**, not frequency. |
+| OLED line 3 | `Bio: REPLAY rest` / `Bio: REPLAY exertion` / `Bio: LIVE` | The plan's `Model bio: REPLAY exertion` is 26 characters; a 128-px OLED shows 21 in the default font. |
+| Hardware lock | `node/hwlock.py`: `HARDWARE BUSY: <name> (pid N) is using the camera/sensors`, exit code 3 | Role B's `node/bio/hwlock_compat.py` now uses this module automatically. |
+| Laptop demo scripts | No tmux on the laptop: `run_demo.sh` opens a terminal window titled "ICU node"; `stop_node.sh` sends SIGTERM (same as `q`); `kill_node.sh` sends SIGKILL | Lets the laptop run as `bed1` if the Pi fails. Scripts match only the real `python -m node.main` process. |
 
 ## Calibration
 
@@ -44,4 +53,7 @@ To be filled in Phase 1 (laptop calibration; re-check on the Pi).
 
 ## Performance
 
-To be filled in Phase 1 (laptop fps) and on hardware day (Pi fps).
+| Where | Camera | fps | Inference | API | Temperature |
+| --- | --- | --- | --- | --- | --- |
+| Laptop (22 Oct) | HP Wide Vision HD, 640×480 MJPG | 10.0 | 31.6 ms (320×240) | Tasks | 47 °C |
+| Pi 3B+ | — | hardware day | — | — | — |

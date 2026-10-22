@@ -1,0 +1,2 @@
+# Pi-only extras (OLED). gpiozero and lgpio come from apt (venv uses --system-site-packages).
+luma.oled>=3.12
