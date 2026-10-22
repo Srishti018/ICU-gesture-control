@@ -1,0 +1,9 @@
+{
+  "kind": "exertion",
+  "person": "SYNTHETIC",
+  "baseline_hr": 74,
+  "source": "synthetic-placeholder",
+  "recorded_at": null,
+  "note": "Clearly synthetic placeholder for Role A integration. Replace with real recordings in Phase 8 (ml/make_replay.py). Never use in the demo.",
+  "seconds": 90
+}
