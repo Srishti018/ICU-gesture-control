@@ -35,8 +35,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Broker credentials
+# Broker files
 broker/passwd
+broker/data/
 
 # Server databases
 server/*.db
