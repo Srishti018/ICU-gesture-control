@@ -46,7 +46,17 @@ Not made yet (needs the §8.6 validation on the Pi). The plan's deadline for it 
 
 ## Data collection log summary
 
-Not started.
+Not started (needs the Pi, Role A's camera code and the team).
+
+Collector laptop dry run, 22 Oct 2026 (Phase 6, §10.4): `python -m ml.collect.session --person PTEST --bio manual --vision synthetic --quick --seconds 6 --out <temp>`, using `--only S1,S3` and then `--only S5 --resume`.
+- Every prompt works when answers are piped in, including note, redo (discarded in the meta and the windows CSV), exertion delay, recovery and resume.
+- `validate_data` read all 10 trial files with no format errors. Exit 1 ("not enough data") is expected for a one-person dry run.
+- The Pi dry run (real camera, `--only S1,S3 --seconds 9`) is still to do.
+
+Collector notes:
+- `--vision synthetic` uses a local stand-in for Role A's `VisionFeatureExtractor`. It only works with `--person PTEST` and an `--out` folder other than `~/icu-data/raw`.
+- PTEST or stand-in-vision data is treated as synthetic, so `ml.train` refuses to write it into `ml/results/` or `ml/models/`.
+- Hidden flags for dry runs only: `--seconds N`, `--quick` (short baseline, pauses, exercise and recovery), `--out`, `--vision`.
 
 ## Model notes
 

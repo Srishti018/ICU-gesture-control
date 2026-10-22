@@ -1,5 +1,6 @@
 """Load windows CSVs and apply the fixed exclusions of plan §12.1 (laptop only, uses pandas)."""
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -33,7 +34,18 @@ def load_windows(folder) -> pd.DataFrame:
         data[col] = pd.to_numeric(data[col], errors="coerce")
     data["discarded"] = data["discarded"].fillna(0).astype(int)
     data["person"] = data["person"].astype(str)
+    data.attrs["synthetic_vision"] = _any_synthetic_vision(folder)
     return data
+
+
+def _any_synthetic_vision(folder: Path) -> bool:
+    for meta in folder.glob("*_meta.json"):
+        try:
+            if json.loads(meta.read_text(encoding="utf-8")).get("vision") == "synthetic":
+                return True
+        except (OSError, ValueError):
+            continue
+    return False
 
 
 def apply_exclusions(data: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
@@ -54,5 +66,11 @@ def apply_exclusions(data: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     return kept, counts
 
 
+DRY_RUN_PERSON = "PTEST"
+
+
 def is_synthetic(data: pd.DataFrame) -> bool:
-    return bool((data["bio_mode"].astype(str) == "synthetic").any())
+    """Synthetic or dry-run data (ml.synth, PTEST, or recorded with the stand-in vision)."""
+    if (data["bio_mode"].astype(str) == "synthetic").any() or (data["person"] == DRY_RUN_PERSON).any():
+        return True
+    return bool(data.attrs.get("synthetic_vision"))
