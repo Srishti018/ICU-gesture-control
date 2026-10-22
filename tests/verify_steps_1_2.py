@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 import subprocess
 import sys
 import threading
@@ -24,6 +25,71 @@ from paho.mqtt.enums import CallbackAPIVersion
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+VENV_PY = str(REPO_ROOT / ".venv" / "bin" / "python")
+
+STATUS_KEYS = {"node", "ts", "level", "p", "features", "hr", "bio_source"}
+FEATURE_KEYS = {"gesture_conf", "tremor", "hr_delta", "spo2"}
+TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$")
+# level: (gesture_conf, tremor, hr_delta) ranges from the plan, section 7.1
+VALUE_RANGES = {
+    "routine": ((0.00, 0.20), (0.002, 0.008), (-3, 5)),
+    "urgent": ((0.80, 0.95), (0.004, 0.012), (-3, 5)),
+    "critical": ((0.80, 0.95), (0.008, 0.020), (18, 30)),
+}
+
+
+def cid(name: str) -> str:
+    """Unique test client ID: test-<name>-<8 hex>."""
+    return f"test-{name}-{secrets.token_hex(4)}"
+
+
+def is_3dp_float(x) -> bool:
+    return isinstance(x, float) and round(x, 3) == x
+
+
+def status_errors(data: dict, node: str, level: str) -> List[str]:
+    """Check a status payload against Appendix A and the plan's value ranges."""
+    errors = []
+    if set(data.keys()) != STATUS_KEYS:
+        errors.append(f"top-level keys {sorted(data.keys())} != {sorted(STATUS_KEYS)}")
+        return errors
+    if data["node"] != node:
+        errors.append(f"node {data['node']!r} != {node!r}")
+    if not isinstance(data["ts"], str) or not TS_RE.match(data["ts"]):
+        errors.append(f"ts {data['ts']!r} not YYYY-MM-DDTHH:MM:SS")
+    if data["level"] != level:
+        errors.append(f"level {data['level']!r} != {level!r}")
+    if data["bio_source"] not in ("live", "replay"):
+        errors.append(f"bio_source {data['bio_source']!r} invalid")
+
+    p = data["p"]
+    if not isinstance(p, dict) or set(p.keys()) != {"routine", "urgent", "critical"}:
+        errors.append(f"p invalid: {p}")
+    else:
+        if not all(isinstance(v, (int, float)) and round(v, 2) == v for v in p.values()):
+            errors.append(f"p values not rounded to 2 decimals: {p}")
+        if abs(sum(p.values()) - 1.0) > 0.01:
+            errors.append(f"p sums to {sum(p.values())}, expected 1.00")
+        if max(p, key=p.get) != level:
+            errors.append(f"p highest is not on {level}: {p}")
+
+    feat = data["features"]
+    if not isinstance(feat, dict) or set(feat.keys()) != FEATURE_KEYS:
+        errors.append(f"features invalid: {feat}")
+        return errors
+    (g_lo, g_hi), (t_lo, t_hi), (d_lo, d_hi) = VALUE_RANGES[level]
+    g, t, d, s = feat["gesture_conf"], feat["tremor"], feat["hr_delta"], feat["spo2"]
+    if not (isinstance(g, (int, float)) and g_lo <= g <= g_hi and round(g, 3) == g):
+        errors.append(f"gesture_conf {g} not in {g_lo}..{g_hi} (3 dp)")
+    if not (is_3dp_float(t) and t_lo <= t <= t_hi):
+        errors.append(f"tremor {t} not in {t_lo}..{t_hi} (3 dp)")
+    if not (type(d) is int and d_lo <= d <= d_hi):
+        errors.append(f"hr_delta {d!r} not int in {d_lo}..{d_hi}")
+    if not (type(s) is int and 96 <= s <= 99):
+        errors.append(f"spo2 {s!r} not int in 96..99")
+    if not (type(data["hr"]) is int and data["hr"] == 75 + d):
+        errors.append(f"hr {data['hr']!r} != 75 + hr_delta")
+    return errors
 
 
 @dataclass
@@ -39,12 +105,12 @@ class RecordedMessage:
 class MessageRecorder:
     """Subscribes to icu/# and records all received MQTT messages."""
 
-    def __init__(self, host: str, port: int, user: str, password: str, client_id: str = "verifier_recorder"):
+    def __init__(self, host: str, port: int, user: str, password: str, client_id: str = "recorder"):
         self.host = host
         self.port = port
         self.user = user
         self.password = password
-        self.client_id = f"{client_id}_{os.getpid()}_{int(time.time())}"
+        self.client_id = cid(client_id)
         self.messages: List[RecordedMessage] = []
         self._lock = threading.Lock()
         self.client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=self.client_id)
@@ -147,7 +213,7 @@ def cleanup_retained_topics(host: str, port: int, user: str, password: str):
     try:
         cleaner = mqtt.Client(
             CallbackAPIVersion.VERSION2,
-            client_id=f"cleaner_{os.getpid()}_{int(time.time())}",
+            client_id=cid("cleaner"),
         )
         if user:
             cleaner.username_pw_set(user, password)
@@ -179,12 +245,12 @@ def test_b1(host: str, port: int, logger_user: str, logger_pass: str, bed1_user:
         sub_received.append(msg.payload.decode("utf-8"))
         sub_event.set()
 
-    sub_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b1_sub_{os.getpid()}")
+    sub_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b1_sub"))
     sub_client.username_pw_set(logger_user, logger_pass)
     sub_client.on_connect = on_sub_connect
     sub_client.on_message = on_sub_msg
 
-    pub_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b1_pub_{os.getpid()}")
+    pub_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b1_pub"))
     pub_client.username_pw_set(bed1_user, bed1_pass)
 
     try:
@@ -221,7 +287,7 @@ def test_b2(host: str, port: int) -> Tuple[str, str]:
             refusal_reason = f"Refused with return code: {rc}"
         event.set()
 
-    anon_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b2_anon_{os.getpid()}")
+    anon_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b2_anon"))
     anon_client.on_connect = on_connect
 
     try:
@@ -256,7 +322,7 @@ def test_b3(host: str, port: int, bed1_user: str) -> Tuple[str, str]:
             refusal_reason = f"Refused with return code: {rc}"
         event.set()
 
-    wrong_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b3_wrong_{os.getpid()}")
+    wrong_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b3_wrong"))
     wrong_client.username_pw_set(bed1_user, "definitely_wrong_password_xyz")
     wrong_client.on_connect = on_connect
 
@@ -286,7 +352,7 @@ def test_b4(host: str, port: int, bed1_user: str, bed1_pass: str, logger_user: s
     token = "kept_token_b4"
 
     # 1. Publish retained message as bed1
-    pub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b4_pub_{os.getpid()}")
+    pub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b4_pub"))
     pub.username_pw_set(bed1_user, bed1_pass)
     pub.connect(host, port, keepalive=5)
     pub.loop_start()
@@ -303,7 +369,7 @@ def test_b4(host: str, port: int, bed1_user: str, bed1_pass: str, logger_user: s
         received_msgs.append((msg.payload.decode("utf-8"), msg.retain))
         rec_event.set()
 
-    new_sub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b4_newsub_{os.getpid()}")
+    new_sub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b4_newsub"))
     new_sub.username_pw_set(logger_user, logger_pass)
     new_sub.on_message = on_msg1
     new_sub.connect(host, port, keepalive=5)
@@ -325,7 +391,7 @@ def test_b4(host: str, port: int, bed1_user: str, bed1_pass: str, logger_user: s
         return "FAIL", f"Expected retain=True on new subscriber delivery, got {retain_flag}"
 
     # 3. Clear with empty retained message
-    clear_pub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b4_clear_{os.getpid()}")
+    clear_pub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b4_clear"))
     clear_pub.username_pw_set(bed1_user, bed1_pass)
     clear_pub.connect(host, port, keepalive=5)
     clear_pub.loop_start()
@@ -342,7 +408,7 @@ def test_b4(host: str, port: int, bed1_user: str, bed1_pass: str, logger_user: s
         cleared_msgs.append(msg.payload)
         cleared_event.set()
 
-    sub2 = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b4_sub2_{os.getpid()}")
+    sub2 = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b4_sub2"))
     sub2.username_pw_set(logger_user, logger_pass)
     sub2.on_message = on_msg2
     sub2.connect(host, port, keepalive=5)
@@ -378,7 +444,7 @@ def test_b5(host: str, ws_port: int, mqtt_port: int, dash_user: str, dash_pass: 
 
     ws_client = mqtt.Client(
         CallbackAPIVersion.VERSION2,
-        client_id=f"b5_ws_{os.getpid()}",
+        client_id=cid("b5_ws"),
         transport="websockets",
     )
     ws_client.username_pw_set(dash_user, dash_pass)
@@ -391,7 +457,7 @@ def test_b5(host: str, ws_port: int, mqtt_port: int, dash_user: str, dash_pass: 
         time.sleep(0.5)
 
         # Publish via standard MQTT on port 1883
-        pub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"b5_pub_{os.getpid()}")
+        pub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("b5_pub"))
         pub.username_pw_set(logger_user, logger_pass)
         pub.connect(host, mqtt_port, keepalive=5)
         pub.loop_start()
@@ -495,7 +561,7 @@ def run_all_tests() -> int:
 
         # Launch fake node bed1
         fake_node_script = str(REPO_ROOT / "sim" / "fake_node.py")
-        cmd = [sys.executable, "-u", fake_node_script, "--node", "bed1"]
+        cmd = [VENV_PY, "-u", fake_node_script, "--node", "bed1"]
         proc_start_time = time.time()
         proc = subprocess.Popen(
             cmd,
@@ -513,7 +579,7 @@ def run_all_tests() -> int:
         )
         if online_msg:
             # Verify retained on broker via a separate new subscriber
-            check_sub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"n1_check_{os.getpid()}")
+            check_sub = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("n1_check"))
             check_sub.username_pw_set(logger_user, logger_pass)
             check_event = threading.Event()
             check_retain = False
@@ -568,42 +634,11 @@ def run_all_tests() -> int:
         if routine_msgs:
             sample = routine_msgs[-1]
             try:
-                data = json.loads(sample.payload_str)
                 errors = []
-                if data.get("node") != "bed1":
-                    errors.append(f"node is {data.get('node')!r}, expected 'bed1'")
-                ts = data.get("ts", "")
-                if not re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$", ts):
-                    errors.append(f"ts '{ts}' does not match YYYY-MM-DDTHH:MM:SS format")
-                if data.get("level") != "routine":
-                    errors.append(f"level is {data.get('level')!r}, expected 'routine'")
-                p = data.get("p", {})
-                if not isinstance(p, dict) or set(p.keys()) != {"routine", "urgent", "critical"}:
-                    errors.append(f"p dict invalid: {p}")
-                else:
-                    sum_p = sum(p.values())
-                    if abs(sum_p - 1.0) > 0.05:
-                        errors.append(f"p values do not sum to ~1: sum={sum_p}")
-                    if not (p["routine"] > p["urgent"] and p["routine"] > p["critical"]):
-                        errors.append(f"routine is not highest probability: {p}")
-                feat = data.get("features", {})
-                if not isinstance(feat, dict) or set(feat.keys()) != {"gesture_conf", "tremor", "hr_delta", "spo2"}:
-                    errors.append(f"features invalid: {feat}")
-                else:
-                    if not (0.0 <= feat["gesture_conf"] <= 0.20):
-                        errors.append(f"gesture_conf {feat['gesture_conf']} not in 0..0.2")
-                    if not (-3 <= feat["hr_delta"] <= 5):
-                        errors.append(f"hr_delta {feat['hr_delta']} not in -3..5")
-                    if not (96 <= feat["spo2"] <= 99):
-                        errors.append(f"spo2 {feat['spo2']} not in 96..99")
-                    if not isinstance(feat["tremor"], (int, float)):
-                        errors.append(f"tremor {feat['tremor']} not numeric")
-                hr = data.get("hr")
-                expected_hr = 75 + feat.get("hr_delta", 0)
-                if hr != expected_hr:
-                    errors.append(f"hr {hr} != 75 + hr_delta ({expected_hr})")
-                if data.get("bio_source") not in ("live", "replay"):
-                    errors.append(f"bio_source {data.get('bio_source')} invalid")
+                for m in routine_msgs:
+                    errors += status_errors(json.loads(m.payload_str), "bed1", "routine")
+                if routine_msgs and json.loads(sample.payload_str)["bio_source"] != "live":
+                    errors.append("bio_source should start as 'live'")
 
                 if not errors:
                     results.append(("N3", "Payload shape matches contract", "PASS", "All contract fields, types, and values validated"))
@@ -665,20 +700,11 @@ def run_all_tests() -> int:
             )
             count_urgent = len(urgent_all)
             try:
-                u_data = json.loads(urgent_msg.payload_str)
-                u_feat = u_data.get("features", {})
-                g_conf = u_feat.get("gesture_conf", 0.0)
-                hr_d = u_feat.get("hr_delta", 999)
-
-                errors = []
+                errors = status_errors(json.loads(urgent_msg.payload_str), "bed1", "urgent")
                 if count_urgent != 1:
                     errors.append(f"Expected exactly 1 urgent message, received {count_urgent}")
                 if urgent_msg.qos != 1:
                     errors.append(f"QoS is {urgent_msg.qos}, expected 1")
-                if not (0.79 <= g_conf <= 0.96):
-                    errors.append(f"gesture_conf {g_conf} not in 0.8..0.95")
-                if not (-3 <= hr_d <= 5):
-                    errors.append(f"hr_delta {hr_d} not in -3..5")
 
                 if not errors:
                     results.append(("N5", "Send '2': 1 urgent msg (QoS 1, features valid, no repeats)", "PASS", "Received 1 urgent message, QoS 1, features valid, no repeats over 7s"))
@@ -712,17 +738,11 @@ def run_all_tests() -> int:
             )
             count_critical = len(critical_all)
             try:
-                c_data = json.loads(critical_msg.payload_str)
-                c_feat = c_data.get("features", {})
-                hr_d = c_feat.get("hr_delta", -999)
-
-                errors = []
+                errors = status_errors(json.loads(critical_msg.payload_str), "bed1", "critical")
                 if count_critical != 1:
                     errors.append(f"Expected exactly 1 critical message, received {count_critical}")
                 if critical_msg.qos != 1:
                     errors.append(f"QoS is {critical_msg.qos}, expected 1")
-                if not (18 <= hr_d <= 30):
-                    errors.append(f"hr_delta {hr_d} not in 18..30")
 
                 if not errors:
                     results.append(("N6", "Send '3': 1 critical msg (QoS 1, hr_delta 18-30, no repeat)", "PASS", "Received 1 critical message, QoS 1, hr_delta 18..30, no repeats over 7s"))
@@ -738,7 +758,7 @@ def run_all_tests() -> int:
             print("[FAIL] N6: No message received on icu/bed1/status/critical")
 
         # N7: A NEW subscriber now receives the critical message with retain=True
-        n7_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=f"n7_sub_{os.getpid()}")
+        n7_client = mqtt.Client(CallbackAPIVersion.VERSION2, client_id=cid("n7_sub"))
         n7_client.username_pw_set(logger_user, logger_pass)
         n7_event = threading.Event()
         n7_retained = False
@@ -841,7 +861,7 @@ def run_all_tests() -> int:
             print("[FAIL] N10: Timed out waiting for LWT 'offline' on icu/bed1/online")
 
         # N11: Restart as bed1, send 'q': icu/bed1/online becomes 'offline' (clean quit)
-        cmd_restart = [sys.executable, "-u", fake_node_script, "--node", "bed1"]
+        cmd_restart = [VENV_PY, "-u", fake_node_script, "--node", "bed1"]
         t_restart = time.time()
         proc = subprocess.Popen(
             cmd_restart,
@@ -882,8 +902,8 @@ def run_all_tests() -> int:
         # N12: Run bed1 and bed2 at the same time for 10 s: both publish routine messages,
         # and neither disconnects the other (check that each client ID is unique)
         cleanup_retained_topics(broker_host, broker_port, logger_user, logger_pass)
-        cmd_bed1 = [sys.executable, "-u", fake_node_script, "--node", "bed1"]
-        cmd_bed2 = [sys.executable, "-u", fake_node_script, "--node", "bed2"]
+        cmd_bed1 = [VENV_PY, "-u", fake_node_script, "--node", "bed1"]
+        cmd_bed2 = [VENV_PY, "-u", fake_node_script, "--node", "bed2"]
 
         t_simultaneous = time.time()
         proc = subprocess.Popen(
@@ -917,20 +937,28 @@ def run_all_tests() -> int:
             since=t_simultaneous,
         )
 
-        # Clean quit both
-        try:
-            if proc.stdin:
-                proc.stdin.write("q\n")
-                proc.stdin.flush()
-            if proc2.stdin:
-                proc2.stdin.write("q\n")
-                proc2.stdin.flush()
-            proc.wait(timeout=3.0)
-            proc2.wait(timeout=3.0)
-        except Exception:
-            pass
+        # Neither node may have gone offline during the 10 s window
+        early_offline = recorder.get_messages(
+            since=t_simultaneous,
+            predicate=lambda m: m.topic in ("icu/bed1/online", "icu/bed2/online") and m.payload_str == "offline",
+        )
+        t_quit = time.time()
 
-        if p1_alive and p2_alive and len(bed1_routine) >= 2 and len(bed2_routine) >= 2:
+        # Clean quit both, then read their output to look for disconnect lines
+        outputs = []
+        for p in (proc, proc2):
+            try:
+                out, _ = p.communicate("q\n", timeout=5.0)
+                outputs.append(out or "")
+            except Exception:
+                outputs.append("")
+        saw_disconnect = any("disconnected" in out for out in outputs)
+        early_offline = [m for m in early_offline if m.arrival_time < t_quit]
+
+        if saw_disconnect or early_offline:
+            results.append(("N12", "Simultaneous bed1 and bed2 run without disconnecting (unique client IDs)", "FAIL", f"disconnect_in_output={saw_disconnect}, offline_during_window={len(early_offline)}"))
+            print(f"[FAIL] N12: disconnect_in_output={saw_disconnect}, offline_during_window={len(early_offline)}")
+        elif p1_alive and p2_alive and len(bed1_routine) >= 3 and len(bed2_routine) >= 3:
             results.append(("N12", "Simultaneous bed1 and bed2 run without disconnecting (unique client IDs)", "PASS", f"Both alive for 10s: bed1={len(bed1_routine)} msgs, bed2={len(bed2_routine)} msgs"))
             print(f"[PASS] N12: Both bed1 and bed2 published routine messages simultaneously (bed1={len(bed1_routine)}, bed2={len(bed2_routine)})")
         else:
