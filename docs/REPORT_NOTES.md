@@ -87,7 +87,8 @@ Source: `node/vision/geometry.py`, `docs/ROLE_A_NOTES.md`. MediaPipe landmarks: 
   - **excluded:** HR ≤ 50 and the 1-point borderline bands
   - Result: 3,392 normal and 1,879 abnormal windows from 49 patients. ΔHR = HR − 75 (adult resting reference).
   - Details: `ml/data/public/README.md`.
-- **Pairing rule:** gesture + normal → **urgent**; gesture + abnormal → **critical**; no_gesture + normal → **routine**; no_gesture + abnormal → **routine** (by default; alerts in this system are patient-initiated).
+- **Pairing rule:** gesture + normal → **urgent**; gesture + abnormal → **critical**; no_gesture + normal → **routine**; no_gesture + abnormal → **routine**.
+  - **Why no gesture + abnormal vitals = routine:** Our system is a patient-initiated alert channel; vitals-only deterioration is handled by the standard ICU bedside monitor alarms, so a desaturating patient without a gesture stays routine in our system by design. This matches the expected case 3 in our proposal.
   - Each gesture window is used once with a normal and once with an abnormal vitals window, so urgent and critical differ only in the vitals.
   - Classes are balanced and the seed is fixed (42).
   - The first window of each trial and redone trials are dropped.
@@ -174,6 +175,7 @@ Generated on 25 Oct 2026 by `python -m ml.train_composed` and `python -m ml.repo
 
 - **Critical vs urgent:** mostly SpO₂ (−3.82) and ΔHR (+2.27); gesture_conf barely differs (−0.13).
 - **Urgent vs routine:** gesture_conf (+2.68), and also SpO₂ (+2.21) and ΔHR (−1.24). Under the pairing rule, half the routine pairs carry abnormal vitals while urgent pairs never do.
+- **Tremor coefficient — what it does and does not show:** the tremor coefficient is highest for routine (+0.865; urgent −0.488, critical −0.377). The tremor feature measures fingertip movement over 3 s; in our recordings the largest movements came from incidental actions (scratching, adjusting) (median tremor per 3-s window: N_SCRATCH 0.189, N_REST_SHAKY 0.072, G_PALM_SHAKY 0.066; G_PALM 0.018), so the model uses high movement as evidence of an accidental movement (routine). It does not show that clinical tremor indicates safety; establishing tremor's clinical value needs patient data (future work).
 - **Runtime parity:** the NumPy runtime matches scikit-learn to 2.2e-16.
 
 ### Four-case check (demo replay files)

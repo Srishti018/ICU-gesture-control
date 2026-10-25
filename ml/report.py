@@ -24,6 +24,10 @@ from ml.schema import CLASSES, FEATURES
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 REAL_DOC = (REPO_ROOT / "docs" / "ML_RESULTS.md").resolve()
+DESIGN_NOTE = ("**Why no gesture + abnormal vitals = routine.** Our system is a patient-initiated alert channel; "
+               "vitals-only deterioration is handled by the standard ICU bedside monitor alarms, so a desaturating "
+               "patient without a gesture stays routine in our system by design. This matches the expected case 3 "
+               "in our proposal.")
 METHOD_NAMES = {"model": "Fusion model (LR)", "rule": "Fixed rule", "gesture_only": "Gesture only"}
 FOLD_COLS = [("accuracy", "Accuracy"), ("macro_f1", "Macro-F1"), ("alert_recall", "Alert recall"),
              ("alert_fpr", "Alert FPR"), ("critical_precision", "Critical precision"),
@@ -96,6 +100,28 @@ def four_case(model_json: Path, pairs_csv: Path, replay: dict):
                           "model": max(p, key=p.get), "rule": rule_level(feats), "expected": expected,
                           "windows_ok": sum(hits), "windows": len(hits)})
     return cases
+
+
+def tremor_note(m: dict, pairs_csv: Path) -> str:
+    """Honest reading of the tremor coefficients, with the per-scenario medians from the training pairs."""
+    c = {k: m["coefficients"][k]["tremor"] for k in CLASSES}
+    if max(c, key=c.get) != "routine":
+        return (f"**Tremor coefficient.** routine {c['routine']:+.3f}, urgent {c['urgent']:+.3f}, critical "
+                f"{c['critical']:+.3f}. Establishing tremor's clinical value needs patient data (future work).")
+    medians = ""
+    if pairs_csv.exists():
+        import pandas as pd
+        # every window of a scenario appears equally often in the pairs, so the medians equal the raw ones
+        pairs = pd.read_csv(pairs_csv)
+        med = pairs.groupby("scenario")["tremor"].median().sort_values(ascending=False)
+        medians = (" (median tremor per 3-s window: " + ", ".join(f"{k} {v:.3f}" for k, v in med.head(3).items())
+                   + f"; G_PALM {med.get('G_PALM', float('nan')):.3f})")
+    return ("**Tremor coefficient — what it does and does not show.** The tremor coefficient is highest for routine "
+            f"({c['routine']:+.3f}; urgent {c['urgent']:+.3f}, critical {c['critical']:+.3f}). The tremor feature "
+            "measures fingertip movement over 3 s; in our recordings the largest movements came from incidental "
+            f"actions (scratching, adjusting){medians}, so the model uses high movement as evidence of an accidental "
+            "movement (routine). It does not show that clinical tremor indicates safety; establishing tremor's "
+            "clinical value needs patient data (future work).")
 
 
 def discussion(m: dict, cases) -> list[str]:
@@ -194,6 +220,8 @@ def build(results_dir, models_dir, replay_dir) -> str:
           f"{ds['vitals_windows'].get('normal', 0)} normal, {ds['vitals_windows'].get('abnormal', 0)} abnormal.",
           f"- **Pairing rule:** {m['pairing']['rule']}. Classes balanced ({m['pairing']['balanced']}); "
           f"seed {m['seed']}.", ""]
+    if m["pairing"]["no_gesture_abnormal"] == "routine":
+        L += [DESIGN_NOTE, ""]
     L += _table(["participant", "gesture windows", "no_gesture windows"],
                 [[p, v.get("gesture", 0), v.get("no_gesture", 0)] for p, v in ds["gesture_windows_per_person"].items()])
     ex = ds["gesture_exclusions"]
@@ -245,7 +273,8 @@ def build(results_dir, models_dir, replay_dir) -> str:
     L += _table(["Class"] + FEATURES + ["intercept"],
                 [[c] + [f"{m['coefficients'][c][ft]:+.3f}" for ft in FEATURES]
                  + [f"{m['coefficients'][c]['intercept']:+.3f}"] for c in CLASSES])
-    L += ["", f"![Coefficients]({rel}/coefficients.png)", "",
+    L += ["", tremor_note(m, results_dir / "final_pairs.csv"), "",
+          f"![Coefficients]({rel}/coefficients.png)", "",
           f"Exported to `model.json`; the NumPy runtime on the Pi matches scikit-learn to "
           f"{m['final']['parity_max_abs_diff']:.1e} (max absolute probability difference).", ""]
 
