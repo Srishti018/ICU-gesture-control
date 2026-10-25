@@ -1,7 +1,6 @@
 {
-  "red_code": 8,
-  "ir_code": 15,
-  "finger_ir_min": 10000,
-  "tuned": false,
-  "note": "Plan defaults; finger_ir_min is a provisional guess. Replace with finger_threshold.py and led_tune.py results on the Pi."
+  "red_code": 9,
+  "ir_code": 4,
+  "finger_ir_min": 11979,
+  "tuned": true
 }
