@@ -1,72 +1,105 @@
 # Project status
 
-Progress view for the finish plan (`docs/FINISH_PLAN.md`). Updated at the end of every phase.
-**Last update:** Thu 22 Oct 2026, Phase 0 (audit).
+Progress view for the finish plan (`docs/FINISH_PLAN.md`).
+**Last update:** Sun 25 Oct 2026 (demo day). All test suites were re-run from a clean state for this update.
+**Git:** `main` = `origin/main` (`82fd395`, GitHub `Medhachalla/icu-biosignal-fusion`). Nothing has been committed since Thu 22 Oct 17:46.
+
+## Demo readiness at a glance
+
+| Area | Ready for the demo? | Why |
+| --- | --- | --- |
+| Broker, server, dashboard, fake node | **Yes** | Built, redesigned, every test passes |
+| Node software on the laptop (`bed1`) | **Yes, with caveats** | Real MediaPipe on the webcam publishes per the contract (C1–C10 pass). Gesture thresholds are uncalibrated defaults, and the real-hand check was never done |
+| Biosignals in the demo | **Placeholder only** | Replay files are `synthetic-placeholder`; no real recording exists |
+| Fusion model | **Rule fallback** | No trained model (`ml/models/model.json` missing, no data collected); the node logs `MODEL NOT FOUND, using rule fallback` |
+| Raspberry Pi, MAX30100, OLED, buzzer | **No** | Never set up (no SD card); code exists, untested on hardware |
+| Demo script, hardware checklist, report notes | **No** | `docs/DEMO_SCRIPT.md`, `docs/HARDWARE_DAY.md`, `docs/REPORT_NOTES.md` not written |
+
+## Phase status (FINISH_PLAN)
+
+| Phase | Status | Gate | Evidence / what's missing |
+| --- | --- | --- | --- |
+| 0 Audit | done | passed | `5b2066c` |
+| 1 Role A software | mostly done | **not passed** | Code + unit tests + C1–C10 committed (`10dd006`). Missing: laptop calibration (P1–P9) and `gesture_params.json` tuning; the [HUMAN] real-hand check (palm → urgent once, `x` + palm → critical once, card on the dashboard); `node/README.md` |
+| 2 Role B software | partial | **not passed** | Pipeline, driver, PPG, sources, collector exist and pass tests. Missing: `ml/make_replay.py` + four-case check, `ml.report`, `ml.run_all`, R2 manual readings every 15 s, collector dry run with webcam vision, a live-source test at real 100 Hz, a clearer laptop message for the sensor tools |
+| 3 Real data (optional) | not started | n/a | No oximeter session was run; `ml/data/raw/` is empty. Decision never recorded |
+| 4 Dashboard redesign (Session B) | done | passed | `82fd395`: redesigned UI, 14 before / 36 after screenshots, §6.7 self-review in `dashboard/design/README.md`, 37 unit tests, 5 Playwright e2e tests |
+| 5 End-to-end on the laptop | not started | **not passed** | Full demo with the webcam node + fake node never run; `docs/DEMO_SCRIPT.md` missing |
+| 6 Hardware-day kit | not started | **not passed** | `node/tools/pi_bootstrap.sh` and `docs/HARDWARE_DAY.md` missing (the other Pi scripts exist and pass `bash -n` + ShellCheck) |
+| 7 Final docs | not started | **not passed** | Root `README.md` doesn't cover the node, webcam or new dashboard; `docs/REPORT_NOTES.md` missing |
 
 ## Components
 
 | Component | Status | Evidence | What's left |
 | --- | --- | --- | --- |
-| Broker (Mosquitto, auth, retain, LWT, WebSockets) | done | `tests/verify_steps_1_2.py` B1–B5 pass | — |
-| Server (Flask + SQLite, ack, API) | done | `pytest server/tests` 22/22; `tests/verify_server.py` S1–S8 pass | — |
-| Dashboard | partial | `npm test` 13/13, build OK, Playwright 1/1 pass | Redesign (FINISH Phase 4, Session B) |
+| Broker (Mosquitto, auth, retain, LWT, WebSockets) | done | B1–B5 pass | — |
+| Server (Flask + SQLite, ack, API) | done | 22 unit tests; S1–S8 pass | — |
+| Dashboard (redesigned nurse-station UI) | done | 37 unit tests, build OK, 5/5 Playwright; screenshots in `dashboard/design/after/` | — |
 | Fake node (`sim/fake_node.py`) | done | N1–N12 pass | — |
-| Node runtime (`node/main.py`, settings, payload, MQTT, control, run log, fusion adapter) | missing | none of the files exist | Phase 1 |
-| Vision (`node/vision/`: camera, hands, geometry, features, synthetic, tools) | missing | prototype only (`node/prototype/`) | Phase 1; **no webcam detected on this laptop** |
-| Hardware lock (`node/hwlock.py`) | missing | `node/bio/hwlock_compat.py` stand-in exists | Phase 1 |
-| `node/requirements.txt`, `-pi.txt` | missing | MediaPipe 1.1.1 dry-run installs into `.venv` with NumPy 2.5 | Phase 1 |
-| OLED (`node/local_io/oled.py`) | missing | — | Phase 1 code + `--mock-io`; hardware-blocked for the real screen |
-| Buzzer (`node/local_io/buzzer.py`) | missing | — | Phase 1 code + `--mock-io`; hardware-blocked for real beeps |
-| Pi tooling (`pi_check`, `deploy`, `run_demo`, `kill_node`, `stop_node`, `set_broker`, `pi_bootstrap`) | missing | — | Phase 1 (scripts) and Phase 6 (bootstrap); running them is hardware-blocked |
-| Bio driver (`node/bio/max30100.py`) | done (code) / hardware-blocked | `test_max30100_parse.py` 7 tests | Bring-up on the Pi |
-| Sensor tools (`node/bio/tools/`) | partial | all 6 written, `--help` works | Clearer "no `/dev/i2c-1`" message (Phase 2); hardware runs |
-| PPG maths (`node/bio/ppg.py`) | done | `test_ppg.py` 9 pass, 1 skipped (needs a real recording) | Real-recording check on hardware day |
-| Bio sources (live, replay, manual) | partial | `test_live.py`, `test_sources.py` pass | `live` fake driver should replay at real 100 Hz (Phase 2) |
-| Collector (`ml/collect/`) | partial | laptop dry run with stand-in vision passes | Webcam vision (needs Phase 1), R2 manual readings every 15 s (Phase 2) |
-| Training / evaluation (`ml/train.py`, `validate_data.py`, rules, runtime) | done | `pytest ml/tests` 16 pass, 1 skipped (needs real model) | Run on real data |
-| Export (`ml/export.py`, `ml/fusion_runtime.py`) | done | parity < 1e-9 on synthetic data | — |
-| Replay files (`ml/replay/`) | partial (placeholder) | `"source": "synthetic-placeholder"` | Replay builder `ml/make_replay.py` (Phase 2); real recordings |
-| Pipeline runner (`ml.run_all`) | missing | — | Phase 2 |
-| Results docs (`ml.report` → `docs/ML_RESULTS.md`) | missing | — | Generator in Phase 2; document needs real data |
-| Demo script / hardware checklist / report notes | missing | — | Phases 5, 6, 7 |
+| Run scripts (`start_all`, `stop_all`, `reset_demo`) | done | used in every test run | `start_all.sh` was not re-run against the redesigned dashboard (same `npm run dev`) |
+| Node runtime (`node/main.py`, settings, payload, MQTT, control, run log, fusion adapter) | done | 42 `node/tests`; `verify_node_contract.py` C1–C10 pass | Real-hand gate (Phase 1) |
+| Vision (camera, MediaPipe Tasks, geometry, features, synthetic) | done (code), **uncalibrated** | geometry tests; webcam 10 fps, 32 ms inference (22 Oct) | Calibration P1–P9 on the laptop; re-check on the Pi |
+| Vision tools (`fps_test`, `vision_probe --calibrate`, `preview`) | done | all run on the laptop | Calibration run by a human |
+| Hardware lock (`node/hwlock.py`) | done | unit test; Role B tools use it | — |
+| `node/requirements.txt`, `-pi.txt` | done | install cleanly into `.venv` | Pi install untested (MediaPipe wheel for Python 3.11 aarch64) |
+| OLED (`node/local_io/oled.py`) | done (code) / hardware-blocked | formatter tests; `--mock-io` shows the screen in the log | Real screen on the Pi |
+| Buzzer (`node/local_io/buzzer.py`) | done (code) / hardware-blocked | pattern scheduler tests; mock beeps in the log | Real beeps on the Pi |
+| Pi / demo scripts (`pi_check`, `deploy`, `set_broker`, `run_demo`, `kill_node`, `stop_node`) | done | `bash -n` + ShellCheck clean; `pi_check` on the laptop passes (Pi lines skipped) | Laptop `run_demo`/`kill_node`/`stop_node` not yet exercised in a demo run |
+| Pi bootstrap (`node/tools/pi_bootstrap.sh`) | **missing** | — | Phase 6 |
+| Bio driver (`node/bio/max30100.py`) | done (code) / hardware-blocked | 7 parse tests | Bring-up on the Pi |
+| Sensor tools (`node/bio/tools/`) | partial | all 6 written | On this laptop they report `Permission denied: '/dev/i2c-1'` (the laptop has its own I2C bus); should say clearly "not a Pi / no MAX30100" |
+| PPG maths (`node/bio/ppg.py`) | done | 9 tests, 1 skipped (needs a real recording) | Real-recording check on the Pi |
+| Bio sources (live, replay, manual) | done | `test_live.py`, `test_sources.py` | Live test runs the fake sensor 4× faster than real time; FINISH asks for real 100 Hz |
+| Collector (`ml/collect/`) | partial | laptop dry run with stand-in vision; can now load the real webcam vision | Webcam dry run; R2 manual readings every 15 s; delete PTEST files after |
+| Training / evaluation / export / runtime | done | 16 `ml/tests`, 1 skipped (needs a real model); parity < 1e-9 | Run on real data |
+| Replay files (`ml/replay/`) | **placeholder** | `"source": "synthetic-placeholder"`; the node warns at startup | `ml/make_replay.py` + real R1/R2 recordings |
+| Replay builder `ml/make_replay.py` + four-case check | **missing** | — | Phase 2 |
+| Pipeline runner `ml.run_all` | **missing** | — | Phase 2 |
+| Results generator `ml.report` → `docs/ML_RESULTS.md` | **missing** | — | Generator in Phase 2; the document needs real data |
+| `docs/DEMO_SCRIPT.md` | **missing** | — | Phase 5 |
+| `docs/HARDWARE_DAY.md` | **missing** | — | Phase 6 |
+| `docs/REPORT_NOTES.md`, root `README.md` update, `node/README.md` | **missing** | — | Phase 7 (`node/README.md`: Role A §14) |
 
-## Test results (Phase 0, 22 Oct 17:40, broker started for the run)
+## Definition of done (FINISH_PLAN §1)
+
+| # | Item | Status |
+| --- | --- | --- |
+| 1 | `./start_all.sh` starts broker, server and the redesigned dashboard | Yes (same scripts; dashboard served by `npm run dev`) |
+| 2 | `python -m node.main --node bed1 --vision camera --bio replay:rest` runs real node code on the webcam; fake node as `bed2` | Code works (camera run on 22 Oct, C1–C10). Not run together with the fake node and dashboard |
+| 3 | Full demo script works on the laptop | **Not done** (Phase 5) |
+| 4 | Role B software complete and tested | **Partial**: replay builder, `ml.run_all`, `ml.report` and collector extras missing |
+| 5 | Real data → real model, replay files, `ML_RESULTS.md`; otherwise pipeline proven on synthetic data and runnable in one command | **Not met**: no real data, and no one-command runner yet |
+| 6 | Dashboard redesigned and verified with screenshots | **Yes** |
+| 7 | Pi reduced to a checklist (`HARDWARE_DAY.md` + bootstrap script) | **Not done** |
+| 8 | All tests pass; docs and report material written | Tests: **yes**. Docs and report material: **no** |
+
+## Test results (Sun 25 Oct, clean state, broker started for the run)
 
 | Suite | Result |
 | --- | --- |
 | `tests/verify_steps_1_2.py` (B1–B5, N1–N12) | 17/17 PASS |
 | `pytest server/tests` | 22 passed |
 | `tests/verify_server.py` (S1–S8) | 8/8 PASS |
-| `dashboard`: `npm test` | 13 passed |
-| `dashboard`: `npm run build` | OK (JS 504 kB, 158 kB gzip) |
-| Playwright (`tests/e2e/dashboard.spec.js`) | 1 passed |
-| `pytest node/bio/tests` | 32 passed, 1 skipped (real sensor recording) |
+| `pytest node/tests` | 42 passed |
+| `node/tests/verify_node_contract.py` (C1–C10, synthetic vision, rule fusion) | 10/10 PASS |
+| `pytest node/bio/tests` | 31 passed, 2 skipped (real sensor recording; Role B's lock stand-in, now replaced by `node/hwlock.py`) |
 | `pytest ml/tests` | 16 passed, 1 skipped (real model + data) |
-| `node/tests` | does not exist yet |
+| `dashboard`: `npm test` | 37 passed (3 files) |
+| `dashboard`: `npm run build` | OK (JS 537 kB, 167 kB gzip; CSS 18 kB; Inter font bundled locally) |
+| Playwright (`tests/e2e/dashboard.spec.js`) | 5/5 passed (theme persists; critical → keyboard ack → response time → gone after reload; server down; broker unreachable banner; Last Will offline) |
 
-## Target files vs repo
+## Open problems found in this update
 
-**Role A plan §4.1:** `docs/NODE_INTERFACES.md` exists and matches Appendix B exactly. `docs/ROLE_A_NOTES.md` was created in this audit. Every file under `node/` in §4.1 is **missing**: `__init__.py`, `README.md`, `requirements*.txt`, `settings.py`, `hwlock.py`, `main.py`, `payload.py`, `mqtt_pub.py`, `control.py`, `runlog.py`, `fusion_adapter.py`, `vision/*`, `local_io/*`, `tools/*`, `tests/*`. `bio_stub.py` isn't needed, because Role B's `node/bio/` exists.
-
-**Role B plan §4.1:**
-- **Exists:** `node/bio/*` (all files, incl. `tools/` and `tests/`), `ml/__init__.py`, `requirements.txt`, `schema.py`, `rule.py`, `fusion_runtime.py`, `synth.py`, `validate_data.py`, `train.py`, `export.py`, `collect/*`, `tests/test_rule.py`, `test_runtime_parity.py`, `test_pipeline_synth.py`, `replay/*` (placeholders), `docs/ROLE_B_NOTES.md`.
-- **Missing:** `ml/make_replay.py`, `ml/models/model.*` (needs real data), `ml/results/*` (needs real data), `docs/ML_RESULTS.md` (needs real data).
-- **Extra** (fine): `ml/dataset.py`, `ml/collect/synthetic_vision.py`, `ml/tests/test_collect.py`, `node/bio/hwlock_compat.py`, `node/bio/tests/test_live.py`.
-
-**Added by FINISH_PLAN, missing:** `ml/report.py`, `ml/run_all`, `node/tools/pi_bootstrap.sh`, `node/tools/stop_node.sh`, `docs/HARDWARE_DAY.md`, `docs/DEMO_SCRIPT.md`, `docs/REPORT_NOTES.md`.
-
-## Audit findings
-
-- **Contract:** `docs/contracts.md` matches Role A Appendix A in substance (same topics, payloads, QoS, retain, rules).
-- **Missing docs:** `docs/CONTEXT_FOR_ROLE_A.md` is listed in FINISH_PLAN but isn't in the repo or on this laptop. It is only a summary, so it isn't blocking.
-- **Plan versions:** `docs/ROLE_A_IMPLEMENTATION_PLAN.md` is the updated Pi 3B+ version. (The PDF in `~/Downloads` is an older Pi 4B version.)
-- **No webcam detected** (no `/dev/video*`, nothing in `lsusb`). Phase 1's webcam steps (fps test, calibration poses, `--vision camera` demo) need one.
-- **Prototype review:** see `docs/ROLE_A_NOTES.md`. Reused: MediaPipe handling and the wrist-relative, size-normalised tremor. Superseded: `collect.py`, `train.py`. Wrong for the product: simulated vitals, binary labels, post-hoc relabelling, `imshow`, 0.5-s rows, `.pkl`.
-- **Hardware lock:** Role A §4.5 asks for the message `HARDWARE BUSY: <name> (pid N) …` and exit code 3. Role B's stand-in switches to `node.hwlock` automatically once it exists.
-- **Git:** no remote configured, so commits stay local.
+- **Webcam is off again:** `/dev/video0` is missing. Press the laptop's camera key before any camera run.
+- **Gesture thresholds are uncalibrated:** `node/vision/gesture_params.json` still says "plan defaults; not calibrated yet". No calibration file exists in `~/icu-data/logs/`. The rule (and the demo's urgent step) depends on an open palm scoring ≥ 0.8.
+- **The demo runs on the rule, not a model:** there's no `ml/models/model.json`, so the node uses the fixed rule. The dashboard may show its "Rule fallback" badge.
+- **Replayed biosignals are synthetic:** the dashboard's "Biosignals replayed" disclosure is true, but the plan (Role B §9.5) says the placeholders must never be used in the demo. For today, either state clearly that the replayed vitals are synthetic placeholders, or skip the exertion story.
+- **The Pi was never set up:** the demo has to use the laptop as `bed1` (the fallback in Role A §15).
 
 ## Decisions log
 
 | When | Decision |
 | --- | --- |
 | Phase 0 | Pi model is the 3B+ (FINISH_PLAN wins over the older Pi 4B PDF). |
+| Phase 1 | MediaPipe Tasks API (1.1.1 has no `mp.solutions`); `numpy<2` only on the Pi; tremor = wrist-relative, size-normalised fingertip, `(std x + std y)/2` per window; OLED line `Bio: REPLAY …` to fit 21 characters. Details in `docs/ROLE_A_NOTES.md`. |
+| Phase 3 | Not run: no data collection session took place. |
