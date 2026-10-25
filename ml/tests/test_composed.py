@@ -114,3 +114,26 @@ def test_rejects_fusion_protocol_files(tmp_path):
     generate(tmp_path / "d", seed=1)
     with pytest.raises(SystemExit, match="not gesture-only"):
         tc.load_gestures(tmp_path / "d")
+
+
+def test_report_generated_from_outputs(run_out, tmp_path):
+    from ml import report
+    out, m = run_out
+    doc_path = tmp_path / "ML_RESULTS.md"
+    assert report.main(["--results", str(out / "results"), "--models", str(out / "models"),
+                        "--out", str(doc_path)]) == 0
+    doc = doc_path.read_text()
+    assert "SYNTHETIC" in doc
+    assert f"{m['mean']['model']['accuracy']['mean']:.3f} ± {m['mean']['model']['accuracy']['sd']:.3f}" in doc
+    assert f"{m['random_split']['accuracy']:.3f}" in doc
+    assert "bidmc_39" in doc and "bidmc_52" in doc               # replay inputs listed
+    assert doc.count("replay |") == 4                             # four-case check rows
+    assert "## 5. Discussion" in doc and "more accurate in" in doc
+
+
+def test_report_refuses_synthetic_into_docs(run_out):
+    from ml import report
+    out, _ = run_out
+    with pytest.raises(SystemExit, match="refusing"):
+        report.main(["--results", str(out / "results"), "--models", str(out / "models")])
+    assert not (REPO_ROOT / "docs" / "ML_RESULTS.md").exists()
