@@ -1,6 +1,8 @@
 """Guided data collection session (interactive; run by the operator on the Pi in tmux).
 
-Usage: python -m ml.collect.session --person P1 --bio live|manual [--resume] [--only S3,S5]
+Usage: python -m ml.collect.session --person P1 --bio live|manual|none [--resume] [--only S3,S5]
+
+--bio none runs the gesture-only protocol instead (camera only, label gesture / no_gesture).
 
 Holds the hardware lock for the whole session. Writes to ~/icu-data/raw/.
 """
@@ -15,7 +17,7 @@ import time
 
 from ml.collect import recorder
 from ml.collect.trial import run_trial
-from ml.schema import SCENARIOS, is_exertion
+from ml.schema import GESTURE_SCENARIOS, SCENARIOS, is_exertion, scenario_label, scenario_name
 
 SAFETY_RULES = """SAFETY RULES (read them out loud to the participant):
   - Only team members who agree take part.
@@ -39,9 +41,31 @@ INSTRUCTIONS = {
 INSTRUCTIONS["H1"] = INSTRUCTIONS["S3"]
 INSTRUCTIONS["H3"] = INSTRUCTIONS["S5"]
 INSTRUCTIONS["H4"] = INSTRUCTIONS["S2"]
+INSTRUCTIONS.update({
+    "G_PALM": "Hold your open palm up towards the camera, fingers spread, for the whole 30 seconds.",
+    "G_PALM_DIM": "Same as before - lights are dimmed for this one.",
+    "G_WEAK": "Hold your hand up towards the camera with fingers half bent, as if you were weak.",
+    "G_PALM_SHAKY": "Hold your open palm up, and let your hand tremble slightly (small, gentle shake).",
+    "N_REST": "Rest your hand in view of the camera. Stay relaxed.",
+    "N_SCRATCH": ("Move naturally: scratch your face, adjust your sleeve, touch your hair. "
+                  "Do NOT hold your palm up."),
+    "N_OTHER": "Make other hand shapes: a fist, pointing, a thumbs up - but NOT an open palm.",
+    "N_NOHAND": "Keep your hand out of the camera's view.",
+    "N_REST_SHAKY": "Rest your hand in view and let it tremble slightly. Do NOT hold your palm up.",
+})
 
 REST_TRIALS = {"S1": 3, "S2": 3, "S3": 3}
 EXERTION_ORDER = [("S4", 1), ("S5", 1), ("S4", 2), ("S5", 2), ("S4", 3), ("S5", 3), ("H4", 1), ("H3", 1)]
+
+
+class NoBio:
+    """--bio none: gesture-only protocol, no biosignal source."""
+
+    def start(self) -> None:
+        pass
+
+    def stop(self) -> None:
+        pass
 
 
 class Aborted(Exception):
@@ -104,6 +128,10 @@ class Session:
 
     def consent(self) -> None:
         self.say(SAFETY_RULES)
+        if self.bio_mode == "none":
+            if not self.ask(f"Does {self.person} agree to take part? (y/n)").lower().startswith("y"):
+                raise Aborted(f"{self.person} did not agree; session stopped")
+            return
         while True:
             a = self.ask(f"Does {self.person} agree to take part, and is {self.person} fine to do light exercise? "
                          "(y/n/no-exercise)").lower()
@@ -117,7 +145,8 @@ class Session:
                 raise Aborted(f"{self.person} did not agree; session stopped")
 
     def sensor_setup(self) -> None:
-        self.say(SENSOR_RULES)
+        if self.bio_mode != "none":
+            self.say(SENSOR_RULES)
         a = self.ask("Which hand makes the gestures? (right/left) [right]").lower()
         self.gesture_hand = "left" if a.startswith("l") else "right"
 
@@ -131,7 +160,7 @@ class Session:
             while time.monotonic() < end:
                 time.sleep(min(2, self.t["setup"]))
                 v = self.vision.window()
-                hr = self.bio.window().get("hr") if self.bio_mode == "live" else "manual"
+                hr = self.bio.window().get("hr") if self.bio_mode == "live" else self.bio_mode
                 print(f"    gesture={v['gesture_conf']:.2f} hand={'yes' if v['hand_present'] else 'no'} hr={hr}",
                       flush=True)
             if self.ask("Did hand detection work (gesture high with the palm up)? (y/n)").lower().startswith("y"):
@@ -176,7 +205,7 @@ class Session:
         while True:
             if hasattr(self.vision, "set_scenario"):
                 self.vision.set_scenario(code)
-            self.say(f"\n=== {code} ({SCENARIOS[code][0]}, label {SCENARIOS[code][1]}) trial {trial_no} ===")
+            self.say(f"\n=== {code} ({scenario_name(code)}, label {scenario_label(code)}) trial {trial_no} ===")
             self.say(f"Participant: {INSTRUCTIONS[code]}")
             if delay_s is None:
                 self.enter("When the participant is ready")
@@ -186,8 +215,11 @@ class Session:
                                ask_reading=self.ask_reading, say=print)
             s = result["summary"]
             fmt = lambda v, d=2: "—" if v is None else f"{v:.{d}f}"  # noqa: E731
-            self.say(f"Summary: mean gesture {fmt(s['gesture'])}, hand {fmt(s['hand'] * 100, 0)}%, "
-                     f"mean hr_delta {fmt(s['hr_delta'], 1)}, finger {fmt(s['finger'] * 100, 0)}%")
+            if self.bio_mode == "none":
+                self.say(f"Summary: mean gesture {fmt(s['gesture'])}, hand {fmt(s['hand'] * 100, 0)}%")
+            else:
+                self.say(f"Summary: mean gesture {fmt(s['gesture'])}, hand {fmt(s['hand'] * 100, 0)}%, "
+                         f"mean hr_delta {fmt(s['hr_delta'], 1)}, finger {fmt(s['finger'] * 100, 0)}%")
             while True:
                 a = self.ask("k keep / r redo / n add a note:").lower()
                 if a == "n":
@@ -222,6 +254,25 @@ class Session:
                 self.enter("Dim the room lights now (H1).")
             self.trial(code, n, light="dim" if code == "H1" else "normal")
             if code == "H1":
+                self.enter("Turn the room lights back on.")
+
+    def gesture_block(self) -> None:
+        """Gesture-only protocol: fixed shuffled order per person, label fixed by the scenario."""
+        order = [(code, n) for code, spec in GESTURE_SCENARIOS.items() for n in range(1, spec[2] + 1)]
+        random.Random(self.person).shuffle(order)
+        self.say("Gesture block order: " + ", ".join(f"{c}-T{n}" for c, n in order))
+        first = True
+        for code, n in order:
+            if not self.wanted(code) or (code, n) in self.done:
+                continue
+            if not first:
+                self.countdown(self.t["pause"], "pause")
+            first = False
+            light = GESTURE_SCENARIOS[code][3]
+            if light == "dim":
+                self.enter(f"Dim the room lights now ({code}).")
+            self.trial(code, n, light=light)
+            if light == "dim":
                 self.enter("Turn the room lights back on.")
 
     def exercise(self, brisk_walk: bool) -> float:
@@ -290,6 +341,10 @@ class Session:
         self.consent()
         self.sensor_setup()
         self.setup_check()
+        if self.bio_mode == "none":
+            self.gesture_block()
+            self.say(f"\nGesture session for {self.person} finished.")
+            return
         self.baseline_step()
         self.rest_block()
         if self.exercise_ok and (self.only is None or any(is_exertion(c) for c in self.only)):
@@ -319,7 +374,8 @@ def load_vision(kind: str):
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Guided ICU Fusion data collection session")
     parser.add_argument("--person", required=True, help="P1, P2, P3 (or PTEST for a dry run)")
-    parser.add_argument("--bio", choices=["live", "manual"], required=True)
+    parser.add_argument("--bio", choices=["live", "manual", "none"], required=True,
+                        help="none = gesture-only protocol (camera only)")
     parser.add_argument("--resume", action="store_true", help="skip trials already recorded (not discarded)")
     parser.add_argument("--only", default=None, help="comma-separated scenario codes, e.g. S3,S5")
     parser.add_argument("--out", default=str(recorder.DEFAULT_OUT), help=argparse.SUPPRESS)
@@ -331,7 +387,8 @@ def main(argv=None) -> int:
     if not re.fullmatch(r"P\d+|PTEST", args.person):
         parser.error("--person must be a code like P1 (no names)")
     if args.only:
-        unknown = [c for c in args.only.split(",") if c not in SCENARIOS]
+        known = GESTURE_SCENARIOS if args.bio == "none" else SCENARIOS
+        unknown = [c for c in args.only.split(",") if c not in known]
         if unknown:
             parser.error(f"unknown scenario(s): {', '.join(unknown)}")
     if args.seconds % 3 or args.seconds < 3:
@@ -341,8 +398,8 @@ def main(argv=None) -> int:
         parser.error("--vision synthetic is for dry runs only: use --person PTEST and a separate --out folder")
     out.mkdir(parents=True, exist_ok=True)
 
-    timing = {"trial": args.seconds, "setup": 20, "baseline": 60, "pause": 15, "exercise": 60,
-              "recovery": 120, "r2": 90}
+    timing = {"trial": args.seconds, "setup": 20, "baseline": 60, "pause": 10 if args.bio == "none" else 15,
+              "exercise": 60, "recovery": 120, "r2": 90}
     if args.quick:
         timing.update(setup=2, baseline=3, pause=1, exercise=2, recovery=1, r2=6)
 
@@ -351,7 +408,10 @@ def main(argv=None) -> int:
     try:
         with HardwareLock("ml.collect.session"):
             vision = load_vision(args.vision)
-            bio = make_bio_source(args.bio, None, **({"take_lock": False} if args.bio == "live" else {}))
+            if args.bio == "none":
+                bio = NoBio()
+            else:
+                bio = make_bio_source(args.bio, None, **({"take_lock": False} if args.bio == "live" else {}))
             vision.start()
             bio.start()
             try:

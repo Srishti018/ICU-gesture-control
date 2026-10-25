@@ -18,6 +18,7 @@ def load_windows(folder) -> pd.DataFrame:
     if not files:
         raise DataFormatError(f"no *_windows.csv files in {folder}")
     frames = []
+    gesture_files = 0
     for f in files:
         try:
             df = pd.read_csv(f)
@@ -26,9 +27,14 @@ def load_windows(folder) -> pd.DataFrame:
         missing = [c for c in WINDOW_COLUMNS if c not in df.columns]
         if missing:
             raise DataFormatError(f"{f.name}: missing columns {missing}")
-        df = df[WINDOW_COLUMNS].copy()
+        has_gesture = "gesture" in df.columns
+        gesture_files += has_gesture
+        df = df[WINDOW_COLUMNS + (["gesture"] if has_gesture else [])].copy()
         df["trial_id"] = f.name[: -len("_windows.csv")]
         frames.append(df)
+    if 0 < gesture_files < len(files):
+        raise DataFormatError(f"{folder}: mixes gesture-only files (with a 'gesture' column) and fusion files; "
+                              "keep them in separate folders")
     data = pd.concat(frames, ignore_index=True)
     for col in FEATURES + ["hr", "baseline_hr", "hand_present", "finger", "bio_quality", "window_idx", "discarded"]:
         data[col] = pd.to_numeric(data[col], errors="coerce")
@@ -48,12 +54,21 @@ def _any_synthetic_vision(folder: Path) -> bool:
     return False
 
 
+def is_gesture_only(data: pd.DataFrame) -> bool:
+    """Files from the gesture-only protocol (--bio none): label is gesture / no_gesture, no bio."""
+    return "gesture" in data.columns
+
+
 def apply_exclusions(data: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
-    """The only data removed: first window of each trial, discarded trials, missing hr_delta/spo2."""
+    """The only data removed: first window of each trial, discarded trials, missing hr_delta/spo2
+    (the last one not for gesture-only data, which has no bio by design)."""
     first = data["window_idx"] == 0
     discarded = data["discarded"] == 1
     base = data[~first & ~discarded]
-    missing_bio = base["hr_delta"].isna() | base["spo2"].isna()
+    if is_gesture_only(data):
+        missing_bio = pd.Series(False, index=base.index)
+    else:
+        missing_bio = base["hr_delta"].isna() | base["spo2"].isna()
     kept = base[~missing_bio].copy()
     counts = {
         "first_window": int(first.sum()),

@@ -7,7 +7,7 @@ from ml.collect import recorder
 from ml.collect.synthetic_vision import SyntheticVision
 from ml.collect.trial import run_trial
 from ml.dataset import apply_exclusions, is_synthetic, load_windows
-from ml.schema import WINDOW_COLUMNS
+from ml.schema import GESTURE_WINDOW_COLUMNS, WINDOW_COLUMNS
 from node.bio.manual import ManualBio
 
 
@@ -69,3 +69,32 @@ def test_collector_output_passes_validate_format(tmp_path):
     # 1 = not enough data (expected for a tiny dry run); 2 would mean a format error
     assert validate_data.main([str(tmp_path), "--out", str(tmp_path / "r")]) == 1
     assert "SYNTHETIC" in (tmp_path / "r" / "data_report.md").read_text()
+
+
+def record_gesture(tmp_path, scenario, trial):
+    clock = FakeClock()
+    vision = SyntheticVision(seed=trial)
+    vision.set_scenario(scenario)
+    return run_trial(vision, None, "PTEST", scenario, trial, tmp_path, seconds=9, bio_mode="none",
+                     sleep=clock.sleep, clock=clock, say=lambda *_: None)
+
+
+def test_gesture_only_trial_format(tmp_path):
+    res = record_gesture(tmp_path, "G_PALM", 1)
+    header = (tmp_path / f"{res['base']}_windows.csv").read_text().splitlines()[0].split(",")
+    assert header == GESTURE_WINDOW_COLUMNS
+    assert not (tmp_path / f"{res['base']}_bio.csv").exists()
+    record_gesture(tmp_path, "N_NOHAND", 1)
+    recorder.mark_discarded(tmp_path, res["base"])
+    data = load_windows(tmp_path)
+    assert set(data["gesture"]) == {"gesture", "no_gesture"}
+    kept, _ = apply_exclusions(data)
+    assert list(kept["gesture"]) == ["no_gesture"] * 2   # no bio needed; discarded + first windows dropped
+    assert validate_data.main([str(tmp_path), "--out", str(tmp_path / "r")]) == 1
+    assert "gesture-only" in (tmp_path / "r" / "data_report.md").read_text()
+
+
+def test_mixed_gesture_and_fusion_files_rejected(tmp_path):
+    record_gesture(tmp_path, "G_PALM", 1)
+    record(tmp_path, "S1", 1, [(70, 98), (71, 98)])
+    assert validate_data.main([str(tmp_path), "--out", str(tmp_path / "r")]) == 2

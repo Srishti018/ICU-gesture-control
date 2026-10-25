@@ -22,10 +22,26 @@ SCENARIOS = {
 }
 CORE_SCENARIOS = ["S1", "S2", "S3", "S4", "S5"]
 
+# Gesture-only protocol (--bio none): camera only, label is gesture / no_gesture.
+GESTURE_CLASSES = ["no_gesture", "gesture"]
+GESTURE_SCENARIOS = {
+    # code: (name, label, trials per person, light)
+    "G_PALM":       ("palm",           "gesture",    6, "normal"),
+    "G_PALM_DIM":   ("palm_dim_light", "gesture",    2, "dim"),
+    "G_WEAK":       ("weak_palm",      "gesture",    2, "normal"),
+    "G_PALM_SHAKY": ("palm_shaky",     "gesture",    2, "normal"),
+    "N_REST":       ("rest",           "no_gesture", 4, "normal"),
+    "N_SCRATCH":    ("incidental",     "no_gesture", 4, "normal"),
+    "N_OTHER":      ("other_shapes",   "no_gesture", 2, "normal"),
+    "N_NOHAND":     ("no_hand",        "no_gesture", 1, "normal"),
+    "N_REST_SHAKY": ("rest_shaky",     "no_gesture", 1, "normal"),
+}
+
 WINDOW_COLUMNS = ["person", "scenario", "scenario_name", "trial", "label", "window_idx", "ts",
                   "gesture_conf", "tremor", "hand_present", "n_frames", "n_hand_frames", "fps",
                   "hr", "spo2", "hr_delta", "finger", "bio_quality", "bio_mode", "baseline_hr",
                   "light", "gesture_hand", "discarded"]
+GESTURE_WINDOW_COLUMNS = WINDOW_COLUMNS + ["gesture"]  # gesture-protocol files only
 
 BIO_COLUMNS = ["t_s", "hr", "spo2", "finger", "quality"]
 
@@ -33,16 +49,18 @@ WINDOW_SECONDS = 3
 
 
 def scenario_label(code: str) -> str:
-    return SCENARIOS[code][1]
+    return GESTURE_SCENARIOS[code][1] if code in GESTURE_SCENARIOS else SCENARIOS[code][1]
 
 
 def scenario_name(code: str) -> str:
-    return SCENARIOS[code][0]
+    return GESTURE_SCENARIOS[code][0] if code in GESTURE_SCENARIOS else SCENARIOS[code][0]
 
 
 def is_exertion(code: str) -> bool:
-    return SCENARIOS[code][2]
+    return False if code in GESTURE_SCENARIOS else SCENARIOS[code][2]
 
 
 def is_gesture(code: str) -> bool:
+    if code in GESTURE_SCENARIOS:
+        return GESTURE_SCENARIOS[code][1] == "gesture"
     return SCENARIOS[code][3]

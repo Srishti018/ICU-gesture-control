@@ -33,7 +33,7 @@ def run_trial(vision, bio, person: str, scenario: str, trial: int, out_dir, *, s
         if delay > 0:
             sleep(delay)
         v = vision.window()
-        b = bio.window() if bio_mode != "manual" else None
+        b = bio.window() if bio_mode not in ("manual", "none") else None
         row = {
             "person": person, "scenario": scenario, "scenario_name": scenario_name(scenario), "trial": trial,
             "label": scenario_label(scenario), "window_idx": i,
@@ -43,6 +43,8 @@ def run_trial(vision, bio, person: str, scenario: str, trial: int, out_dir, *, s
             "bio_mode": bio_mode, "baseline_hr": baseline_hr, "light": light, "gesture_hand": gesture_hand,
             "discarded": 0,
         }
+        if bio_mode == "none":
+            row["gesture"] = scenario_label(scenario)
         if b is not None:
             row.update(hr=b["hr"], spo2=b["spo2"], hr_delta=b["hr_delta"], finger=b["finger"], bio_quality=b["quality"])
             say(f"  w{i} g={v['gesture_conf']:.2f} tr={v['tremor']:.3f} hand={float(v['hand_present']):.1f} "
@@ -59,6 +61,8 @@ def run_trial(vision, bio, person: str, scenario: str, trial: int, out_dir, *, s
             b = bio.window_for(WINDOW_SECONDS * i, WINDOW_SECONDS * (i + 1))
             row.update(hr=b["hr"], spo2=b["spo2"], hr_delta=b["hr_delta"], finger=True, bio_quality=b["quality"])
         bio_rows = bio.per_second()
+    elif bio_mode == "none":
+        bio_rows = None
     else:
         recs = bio.records(seconds + 1) if hasattr(bio, "records") else []
         t0 = recs[0]["t"] if recs else 0
@@ -75,7 +79,8 @@ def run_trial(vision, bio, person: str, scenario: str, trial: int, out_dir, *, s
         "vision": "synthetic" if getattr(vision, "is_synthetic", False) else "camera",
     }
     recorder.write_windows(out_dir / f"{base}_windows.csv", rows)
-    recorder.write_bio(out_dir / f"{base}_bio.csv", bio_rows)
+    if bio_rows is not None:
+        recorder.write_bio(out_dir / f"{base}_bio.csv", bio_rows)
     recorder.write_json(out_dir / f"{base}_meta.json", meta)
 
     summary = {

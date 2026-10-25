@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 import subprocess
 
-from ml.schema import BIO_COLUMNS, WINDOW_COLUMNS
+from ml.schema import BIO_COLUMNS, GESTURE_WINDOW_COLUMNS, WINDOW_COLUMNS
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = Path.home() / "icu-data" / "raw"
@@ -41,11 +41,12 @@ def _cell(v):
 
 
 def write_windows(path: Path, rows: list[dict]) -> None:
+    columns = GESTURE_WINDOW_COLUMNS if rows and "gesture" in rows[0] else WINDOW_COLUMNS
     with path.open("w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=WINDOW_COLUMNS)
+        w = csv.DictWriter(fh, fieldnames=columns)
         w.writeheader()
         for r in rows:
-            w.writerow({c: _cell(r.get(c)) for c in WINDOW_COLUMNS})
+            w.writerow({c: _cell(r.get(c)) for c in columns})
 
 
 def write_bio(path: Path, rows: list[dict]) -> None:
