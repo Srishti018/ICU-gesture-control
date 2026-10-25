@@ -89,7 +89,8 @@ def _check_outputs(paths, synthetic: bool) -> None:
             raise SystemExit(f"refusing to write synthetic-data results into {p} (synthetic data is for tests only)")
 
 
-def _confusion_chart(metrics: dict, path: Path, title_note: str) -> None:
+def _confusion_chart(metrics: dict, path: Path, title_note: str,
+                     title: str = "Leave-one-person-out confusion matrices") -> None:
     fig, axes = plt.subplots(1, 3, figsize=(13, 4.2))
     for ax, name in zip(axes, METHODS):
         cm = np.array(metrics[name]["confusion"])
@@ -104,7 +105,7 @@ def _confusion_chart(metrics: dict, path: Path, title_note: str) -> None:
             for j in range(3):
                 ax.text(j, i, int(cm[i, j]), ha="center", va="center",
                         color="white" if cm[i, j] > vmax / 2 else "black")
-    fig.suptitle("Leave-one-person-out confusion matrices" + title_note)
+    fig.suptitle(title + title_note)
     fig.tight_layout()
     fig.savefig(path, dpi=120)
     plt.close(fig)

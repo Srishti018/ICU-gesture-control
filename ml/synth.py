@@ -3,7 +3,7 @@
 Never write into ml/data/raw/, and never use these numbers in a result, chart or the report.
 Rows are tagged bio_mode="synthetic" so the training script can refuse to publish them.
 
-Usage: python -m ml.synth <out_dir> [--seed 0]
+Usage: python -m ml.synth <out_dir> [--seed 0] [--gestures]   (--gestures: gesture-only protocol files)
 """
 
 import argparse
@@ -12,7 +12,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import random
 
-from ml.schema import SCENARIOS, WINDOW_COLUMNS, is_exertion, is_gesture, scenario_label, scenario_name
+from ml.schema import (GESTURE_SCENARIOS, GESTURE_WINDOW_COLUMNS, SCENARIOS, WINDOW_COLUMNS, is_exertion,
+                       is_gesture, scenario_label, scenario_name)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = (REPO_ROOT / "ml" / "data" / "raw").resolve()
@@ -92,12 +93,62 @@ def generate(out_dir, seed: int = 0) -> list[Path]:
     return paths
 
 
+def _gesture_window(rng: random.Random, code: str) -> dict:
+    gesture = is_gesture(code)
+    if rng.random() < HARD_FRACTION:
+        gesture = not gesture
+    if code == "N_NOHAND" and not gesture:
+        hand = False
+    else:
+        hand = gesture or rng.random() < 0.9
+    low = 0.6 if code == "G_WEAK" else 0.8
+    conf = rng.uniform(low, 0.95) if gesture else rng.uniform(0.0, 0.35)
+    shaky = code.endswith("SHAKY")
+    n_frames = rng.randint(27, 33)
+    return {
+        "gesture_conf": round(conf if hand else 0.0, 3),
+        "tremor": round(rng.uniform(0.03, 0.08) if shaky else rng.uniform(0.005, 0.03), 3),
+        "hand_present": int(hand), "n_frames": n_frames, "n_hand_frames": n_frames if hand else 0,
+        "fps": round(n_frames / 3, 1),
+    }
+
+
+def generate_gestures(out_dir, seed: int = 0, people=PEOPLE) -> list[Path]:
+    """Synthetic gesture-only protocol files (same format as `ml.collect.session --bio none`)."""
+    out_dir = Path(out_dir)
+    _refuse_raw(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    rng = random.Random(seed)
+    start = datetime(2026, 10, 25, 20, 0, 0)
+    paths = []
+    for person in people:
+        for code, (name, label, trials, light) in GESTURE_SCENARIOS.items():
+            for trial in range(1, trials + 1):
+                t0 = start + timedelta(minutes=len(paths))
+                path = out_dir / f"{person}_{code}_T{trial}_{t0:%Y%m%d-%H%M%S}_windows.csv"
+                with path.open("w", newline="", encoding="utf-8") as fh:
+                    writer = csv.DictWriter(fh, fieldnames=GESTURE_WINDOW_COLUMNS)
+                    writer.writeheader()
+                    for w in range(WINDOWS):
+                        row = _gesture_window(rng, code)
+                        row.update({
+                            "person": person, "scenario": code, "scenario_name": name, "trial": trial,
+                            "label": label, "gesture": label, "window_idx": w,
+                            "ts": (t0 + timedelta(seconds=3 * (w + 1))).strftime("%Y-%m-%dT%H:%M:%S"),
+                            "bio_mode": "synthetic", "light": light, "gesture_hand": "right", "discarded": 0,
+                        })
+                        writer.writerow(row)
+                paths.append(path)
+    return paths
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("out_dir")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--gestures", action="store_true", help="gesture-only protocol files")
     args = parser.parse_args()
-    paths = generate(args.out_dir, args.seed)
+    paths = (generate_gestures if args.gestures else generate)(args.out_dir, args.seed)
     print(f"wrote {len(paths)} synthetic trial files to {args.out_dir}")
 
 

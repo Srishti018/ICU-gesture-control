@@ -74,10 +74,19 @@ def test_missing_or_bad_feature_raises(tmp_path):
         model.predict_proba({k: v for k, v in good.items() if k != "gesture_conf"})
 
 
-@pytest.mark.skipif(not (REAL_MODEL.exists() and any(REAL_DATA.glob("*_windows.csv"))),
-                    reason="real model and data not available yet (Phase 8)")
+REAL_PAIRS = REPO_ROOT / "ml" / "results" / "final_pairs.csv"  # composed dataset (ml.train_composed)
+
+
+@pytest.mark.skipif(not (REAL_MODEL.exists() and (REAL_PAIRS.exists() or any(REAL_DATA.glob("*_windows.csv")))),
+                    reason="real model and data not available yet")
 def test_real_model_parity():
     import joblib
+    import pandas as pd
     pipe = joblib.load(REAL_MODEL.with_suffix(".joblib"))
-    kept, _ = apply_exclusions(load_windows(REAL_DATA))
-    _assert_parity(pipe, FusionModel.load(REAL_MODEL), kept, kept[FEATURES].astype(float).to_numpy())
+    if REAL_PAIRS.exists():
+        kept = pd.read_csv(REAL_PAIRS)
+    else:
+        kept, _ = apply_exclusions(load_windows(REAL_DATA))
+    kept = kept.copy()
+    kept[FEATURES] = kept[FEATURES].astype(float)
+    _assert_parity(pipe, FusionModel.load(REAL_MODEL), kept, kept[FEATURES].to_numpy())
