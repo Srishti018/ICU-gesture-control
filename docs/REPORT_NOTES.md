@@ -118,6 +118,7 @@ Source: `node/vision/geometry.py`, `docs/ROLE_A_NOTES.md`. MediaPipe landmarks: 
   - Flask runs on its development server
 - **Pi 3B+ frame rate:** MediaPipe on the 3B+ gives far fewer frames per 3-s window than the laptop (10 fps). Measure it on hardware day. Fewer frames make gesture_conf and tremor noisier.
 - **Gesture thresholds are uncalibrated** (plan defaults). One camera position and one room.
+- **Tremor feature lowers sensitivity to trembling gestures:** trembling-palm alert recall 0.889 (model) vs 0.972 (rule), P1 held out 0.778 vs 0.944; scratching false alerts 4.2% vs 0%. The tremor weight reflects how movement appeared in our recordings, not clinical tremor; redefining or removing the feature is future work.
 
 ## 6. Report corrections (changes from the original implementation plan)
 
@@ -175,7 +176,8 @@ Generated on 25 Oct 2026 by `python -m ml.train_composed` and `python -m ml.repo
 
 - **Critical vs urgent:** mostly SpO₂ (−3.82) and ΔHR (+2.27); gesture_conf barely differs (−0.13).
 - **Urgent vs routine:** gesture_conf (+2.68), and also SpO₂ (+2.21) and ΔHR (−1.24). Under the pairing rule, half the routine pairs carry abnormal vitals while urgent pairs never do.
-- **Tremor coefficient — what it does and does not show:** the tremor coefficient is highest for routine (+0.865; urgent −0.488, critical −0.377). The tremor feature measures fingertip movement over 3 s; in our recordings the largest movements came from incidental actions (scratching, adjusting) (median tremor per 3-s window: N_SCRATCH 0.189, N_REST_SHAKY 0.072, G_PALM_SHAKY 0.066; G_PALM 0.018), so the model uses high movement as evidence of an accidental movement (routine). It does not show that clinical tremor indicates safety; establishing tremor's clinical value needs patient data (future work).
+- **Tremor coefficient — what it does and does not show:** the tremor coefficient is highest for routine (+0.865; urgent −0.488, critical −0.377). The tremor feature measures fingertip movement over 3 s; in our recordings the largest movements came from incidental actions (scratching, adjusting) (median tremor per 3-s window: N_SCRATCH 0.189, N_REST_SHAKY 0.072, G_PALM_SHAKY 0.066; G_PALM 0.018), so the model learned to associate high movement with routine. It does not show that clinical tremor indicates safety; establishing tremor's clinical value needs patient data (future work).
+- **Tremor weight on trembling palms and scratching (held-out test pairs):** On trembling-palm windows the model's alert recall is 0.889 vs 0.972 for the rule (P1 held out: 0.778 vs 0.944); all misses were classified routine. On scratching windows the model raised 4.2% false alerts vs 0% for the rule. The camera's gesture score alone already separates scratching from a raised palm, so the tremor weight does not help reject accidental movements; it is a side-effect of how movement appeared in our recordings and it reduces sensitivity to trembling gestures. Redefining or removing the tremor feature is future work.
 - **Runtime parity:** the NumPy runtime matches scikit-learn to 2.2e-16.
 
 ### Four-case check (demo replay files)

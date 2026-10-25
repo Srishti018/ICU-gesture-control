@@ -119,9 +119,62 @@ def tremor_note(m: dict, pairs_csv: Path) -> str:
     return ("**Tremor coefficient — what it does and does not show.** The tremor coefficient is highest for routine "
             f"({c['routine']:+.3f}; urgent {c['urgent']:+.3f}, critical {c['critical']:+.3f}). The tremor feature "
             "measures fingertip movement over 3 s; in our recordings the largest movements came from incidental "
-            f"actions (scratching, adjusting){medians}, so the model uses high movement as evidence of an accidental "
-            "movement (routine). It does not show that clinical tremor indicates safety; establishing tremor's "
-            "clinical value needs patient data (future work).")
+            f"actions (scratching, adjusting){medians}, so the model learned to associate high movement with "
+            "routine. It does not show that clinical tremor indicates safety; establishing tremor's clinical value "
+            "needs patient data (future work).")
+
+
+def heldout_test_pairs(m: dict, gestures_dir) -> "pd.DataFrame":
+    """Re-run the held-out evaluation in memory (same seed; nothing is written) and check it is the saved one."""
+    from ml import train_composed as tc
+    gest = tc.load_gestures(gestures_dir)
+    vit = tc.load_vitals(m["dataset"]["vitals_csv"])
+    k, seed, mode = m["split"]["vitals_folds"], m["seed"], m["pairing"]["no_gesture_abnormal"]
+    groups = tc.patient_groups(vit, k, seed)
+    if {str(g): sorted(p for p, x in groups.items() if x == g) for g in range(k)} != m["split"]["patient_groups"]:
+        raise SystemExit("re-run evaluation: patient groups differ from metrics.json")
+    folds, tests = tc.evaluate_folds(gest, vit, groups, k, seed, mode)
+    same = (json.loads(json.dumps(tc.pooled_metrics(tests))) == m["pooled"]
+            and all(json.loads(json.dumps(f[n])) == s[n] for f, s in zip(folds, m["folds"]) for n in METHOD_NAMES))
+    if not same or len(folds) != len(m["folds"]):
+        raise SystemExit(f"re-run evaluation on {gestures_dir} does not reproduce metrics.json; "
+                         "pass the gesture folder the results were made from (--gestures)")
+    return tests
+
+
+def _rate(v) -> str:
+    return f"{100 * v:.1f}".rstrip("0").rstrip(".") + "%"
+
+
+def tremor_qualification(tests) -> tuple[str, str] | None:
+    """(paragraph, limitation) on trembling palms and scratching, from the held-out test pairs."""
+    shaky = tests[tests["scenario"] == "G_PALM_SHAKY"]
+    scratch = tests[tests["scenario"] == "N_SCRATCH"]
+    if shaky.empty or scratch.empty:
+        return None
+    alert = {n: tests[f"pred_{n}"] != "routine" for n in ("model", "rule")}
+    rec = {n: float(alert[n][shaky.index].mean()) for n in alert}
+    fpr = {n: float(alert[n][scratch.index].mean()) for n in alert}
+    per = {p: {n: float(alert[n][d.index].mean()) for n in alert} for p, d in shaky.groupby("person")}
+    worst = min(per, key=lambda p: per[p]["model"])
+    misses = shaky[~alert["model"][shaky.index]]
+    routine = int((misses["pred_model"] == "routine").sum())
+    miss_txt = ("all misses were classified routine" if routine == len(misses) and len(misses)
+                else f"{routine} of {len(misses)} misses were classified routine")
+    text = (f"On trembling-palm windows the model's alert recall is {rec['model']:.3f} vs {rec['rule']:.3f} for the "
+            f"rule ({worst} held out: {per[worst]['model']:.3f} vs {per[worst]['rule']:.3f}); {miss_txt}. On "
+            f"scratching windows the model raised {_rate(fpr['model'])} false alerts vs {_rate(fpr['rule'])} for the rule.")
+    if rec["model"] < rec["rule"] and fpr["model"] >= fpr["rule"]:
+        text += (" The camera's gesture score alone already separates scratching from a raised palm, so the tremor "
+                 "weight does not help reject accidental movements; it is a side-effect of how movement appeared in "
+                 "our recordings and it reduces sensitivity to trembling gestures.")
+    text += " Redefining or removing the tremor feature is future work."
+    limitation = (f"- **Tremor feature lowers sensitivity to trembling gestures:** trembling-palm alert recall "
+                  f"{rec['model']:.3f} (model) vs {rec['rule']:.3f} (rule), {worst} held out {per[worst]['model']:.3f} vs "
+                  f"{per[worst]['rule']:.3f}; scratching false alerts {_rate(fpr['model'])} vs {_rate(fpr['rule'])}. "
+                  "The tremor weight reflects how movement appeared in our recordings, not clinical tremor; "
+                  "redefining or removing the feature is future work.")
+    return f"**Tremor weight on trembling palms and scratching (held-out test pairs).** {text}", limitation
 
 
 def discussion(m: dict, cases) -> list[str]:
@@ -189,7 +242,7 @@ def discussion(m: dict, cases) -> list[str]:
     return out
 
 
-def build(results_dir, models_dir, replay_dir) -> str:
+def build(results_dir, models_dir, replay_dir, gestures_dir=None) -> str:
     results_dir, models_dir, replay_dir = Path(results_dir), Path(models_dir), Path(replay_dir)
     m = json.loads((results_dir / "metrics.json").read_text(encoding="utf-8"))
     if m.get("kind") != "composed":
@@ -197,6 +250,7 @@ def build(results_dir, models_dir, replay_dir) -> str:
     ds, mean, pooled = m["dataset"], m["mean"], m["pooled"]
     replay = _replay_rows(replay_dir)
     cases = four_case(models_dir / "model.json", results_dir / "final_pairs.csv", replay)
+    qual = tremor_qualification(heldout_test_pairs(m, gestures_dir)) if gestures_dir else None
     try:
         rel = os.path.relpath(results_dir.resolve(), REAL_DOC.parent)
     except ValueError:
@@ -273,7 +327,10 @@ def build(results_dir, models_dir, replay_dir) -> str:
     L += _table(["Class"] + FEATURES + ["intercept"],
                 [[c] + [f"{m['coefficients'][c][ft]:+.3f}" for ft in FEATURES]
                  + [f"{m['coefficients'][c]['intercept']:+.3f}"] for c in CLASSES])
-    L += ["", tremor_note(m, results_dir / "final_pairs.csv"), "",
+    L += ["", tremor_note(m, results_dir / "final_pairs.csv"), ""]
+    if qual:
+        L += [qual[0], ""]
+    L += [
           f"![Coefficients]({rel}/coefficients.png)", "",
           f"Exported to `model.json`; the NumPy runtime on the Pi matches scikit-learn to "
           f"{m['final']['parity_max_abs_diff']:.1e} (max absolute probability difference).", ""]
@@ -308,7 +365,10 @@ def build(results_dir, models_dir, replay_dir) -> str:
           "- **Low heart rate excluded** (HR ≤ 50): logistic regression with a linear ΔHR cannot treat both very low "
           "and very high HR as abnormal.",
           "- **ΔHR uses a fixed 75 bpm reference**, not each patient's own baseline.",
-          "- **No hyper-parameter tuning, one model family**; the patient grouping and pairing use one fixed seed.", ""]
+          "- **No hyper-parameter tuning, one model family**; the patient grouping and pairing use one fixed seed."]
+    if qual:
+        L.append(qual[1])
+    L.append("")
     if (results_dir / "data_report.md").exists():
         L += ["## Appendix: gesture data validation", "", "See `data_report.md` in the results folder "
               f"(`{results_dir / 'data_report.md'}`)."]
@@ -320,9 +380,11 @@ def main(argv=None) -> int:
     parser.add_argument("--results", default="ml/results")
     parser.add_argument("--models", default="ml/models")
     parser.add_argument("--replay", default="ml/replay")
+    parser.add_argument("--gestures", default="ml/data/raw",
+                        help="gesture folder the results were made from (held-out predictions are re-run in memory)")
     parser.add_argument("--out", default=str(REAL_DOC))
     args = parser.parse_args(argv)
-    doc = build(args.results, args.models, args.replay)
+    doc = build(args.results, args.models, args.replay, args.gestures)
     synthetic = json.loads((Path(args.results) / "metrics.json").read_text(encoding="utf-8"))["synthetic"]
     if synthetic and Path(args.out).resolve() == REAL_DOC:
         raise SystemExit("refusing to write synthetic results to docs/ML_RESULTS.md (use --out <temp file>)")

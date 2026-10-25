@@ -129,12 +129,12 @@ def test_rejects_fusion_protocol_files(tmp_path):
         tc.load_gestures(tmp_path / "d")
 
 
-def test_report_generated_from_outputs(run_out, tmp_path):
+def test_report_generated_from_outputs(run_out, gestures_dir, tmp_path):
     from ml import report
     out, m = run_out
     doc_path = tmp_path / "ML_RESULTS.md"
     assert report.main(["--results", str(out / "results"), "--models", str(out / "models"),
-                        "--out", str(doc_path)]) == 0
+                        "--gestures", str(gestures_dir), "--out", str(doc_path)]) == 0
     doc = doc_path.read_text()
     assert "SYNTHETIC" in doc
     assert f"{m['mean']['model']['accuracy']['mean']:.3f} ± {m['mean']['model']['accuracy']['sd']:.3f}" in doc
@@ -142,13 +142,26 @@ def test_report_generated_from_outputs(run_out, tmp_path):
     assert "bidmc_39" in doc and "bidmc_52" in doc               # replay inputs listed
     assert doc.count("replay |") == 4                             # four-case check rows
     assert "## 5. Discussion" in doc and "more accurate in" in doc
+    assert "On trembling-palm windows the model's alert recall is" in doc        # held-out re-run paragraph
+    assert "Tremor feature lowers sensitivity" in doc                            # limitations bullet
 
 
-def test_report_refuses_synthetic_into_docs(run_out):
+def test_report_rerun_must_reproduce_saved_metrics(run_out, tmp_path):
+    from ml import report
+    out, _ = run_out
+    other = tmp_path / "other"
+    generate_gestures(other, seed=99)                                            # different data
+    with pytest.raises(SystemExit, match="does not reproduce"):
+        report.main(["--results", str(out / "results"), "--models", str(out / "models"),
+                     "--gestures", str(other), "--out", str(tmp_path / "x.md")])
+
+
+def test_report_refuses_synthetic_into_docs(run_out, gestures_dir):
     from ml import report
     out, _ = run_out
     doc = REPO_ROOT / "docs" / "ML_RESULTS.md"
     before = doc.read_bytes() if doc.exists() else None
     with pytest.raises(SystemExit, match="refusing"):
-        report.main(["--results", str(out / "results"), "--models", str(out / "models")])
+        report.main(["--results", str(out / "results"), "--models", str(out / "models"),
+                     "--gestures", str(gestures_dir)])
     assert (doc.read_bytes() if doc.exists() else None) == before

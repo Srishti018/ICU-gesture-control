@@ -185,6 +185,37 @@ def _mean_sd(values):
     return {"mean": _r(np.mean(vals)), "sd": _r(np.std(vals, ddof=1) if len(vals) > 1 else 0.0)}
 
 
+def evaluate_folds(gest, vit, groups, vitals_folds, seed, no_gesture_abnormal, verbose=False):
+    """The held-out evaluation: per-fold summaries and every test pair with each method's prediction
+    (columns pred_model / pred_rule / pred_gesture_only). Deterministic for a given seed."""
+    vit = vit.assign(group=vit["patient"].map(groups))
+    folds, tests, fold_no = [], [], 0
+    for person in sorted(gest["person"].unique()):
+        for g in range(vitals_folds):
+            rng = np.random.default_rng([seed, fold_no])
+            train = compose(gest[gest["person"] != person], vit[vit["group"] != g], rng, no_gesture_abnormal)
+            test = compose(gest[gest["person"] == person], vit[vit["group"] == g], rng, no_gesture_abnormal)
+            model = build_pipeline().fit(train[FEATURES].to_numpy(), train["label"].to_numpy())
+            preds = predict_all(model, test)
+            y = test["label"].to_numpy()
+            fold = {"fold": fold_no, "test_person": person, "test_group": g,
+                    "test_patients": sorted(p for p, gg in groups.items() if gg == g),
+                    "n_train": int(len(train)), "n_test": int(len(test))}
+            fold.update({name: fold_summary(y, preds[name]) for name in METHODS})
+            folds.append(fold)
+            tests.append(test.assign(fold=fold_no, **{f"pred_{n}": preds[n] for n in METHODS}))
+            if verbose:
+                print(f"fold {fold_no}: test {person} x group {g} ({fold['n_test']} pairs): "
+                      + ", ".join(f"{n} {fold[n]['accuracy']}" for n in METHODS))
+            fold_no += 1
+    return folds, pd.concat(tests, ignore_index=True)
+
+
+def pooled_metrics(test_pairs: pd.DataFrame) -> dict:
+    y, persons = test_pairs["label"].to_numpy(), test_pairs["person"].to_numpy()
+    return {n: method_metrics(y, test_pairs[f"pred_{n}"].to_numpy(), persons) for n in METHODS}
+
+
 def check_parity(pipe, model_json: Path, pairs: pd.DataFrame) -> float:
     runtime = FusionModel.load(model_json)
     sk = pipe.predict_proba(pairs[FEATURES].to_numpy())
@@ -269,31 +300,8 @@ def run(gestures_dir, vitals_csv, out_dir, models_dir=None, *, vitals_folds=DEFA
     print(f"gesture windows: {len(gest)} kept ({gest['gesture'].value_counts().to_dict()}), people {people}; "
           f"vitals windows: {len(vit)} ({vit['label'].value_counts().to_dict()}), {len(groups)} patients")
 
-    folds, pooled_y, pooled_pred, pooled_person = [], [], {k: [] for k in METHODS}, []
-    fold_no = 0
-    for person in people:
-        for g in range(vitals_folds):
-            rng = np.random.default_rng([seed, fold_no])
-            train = compose(gest[gest["person"] != person], vit[vit["group"] != g], rng, no_gesture_abnormal)
-            test = compose(gest[gest["person"] == person], vit[vit["group"] == g], rng, no_gesture_abnormal)
-            model = build_pipeline().fit(train[FEATURES].to_numpy(), train["label"].to_numpy())
-            preds = predict_all(model, test)
-            y = test["label"].to_numpy()
-            fold = {"fold": fold_no, "test_person": person, "test_group": g,
-                    "test_patients": sorted(p for p, gg in groups.items() if gg == g),
-                    "n_train": int(len(train)), "n_test": int(len(test))}
-            fold.update({name: fold_summary(y, preds[name]) for name in METHODS})
-            folds.append(fold)
-            pooled_y.append(y)
-            pooled_person.append(test["person"].to_numpy())
-            for name in METHODS:
-                pooled_pred[name].append(preds[name])
-            print(f"fold {fold_no}: test {person} x group {g} ({fold['n_test']} pairs): "
-                  + ", ".join(f"{n} {fold[n]['accuracy']}" for n in METHODS))
-            fold_no += 1
-
-    y_all, persons_all = np.concatenate(pooled_y), np.concatenate(pooled_person)
-    pooled = {n: method_metrics(y_all, np.concatenate(pooled_pred[n]), persons_all) for n in METHODS}
+    folds, test_pairs = evaluate_folds(gest, vit, groups, vitals_folds, seed, no_gesture_abnormal, verbose=True)
+    pooled = pooled_metrics(test_pairs)
     mean = {n: {k: _mean_sd([fd[n][k] for fd in folds]) for k in FOLD_METRICS} for n in METHODS}
 
     all_pairs = compose(gest, vit, np.random.default_rng([seed, 9999]), no_gesture_abnormal)
