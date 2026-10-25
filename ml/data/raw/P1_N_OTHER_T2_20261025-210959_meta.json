@@ -1,0 +1,19 @@
+{
+  "person": "P1",
+  "scenario": "N_OTHER",
+  "scenario_name": "other_shapes",
+  "label": "no_gesture",
+  "trial": 2,
+  "bio_mode": "none",
+  "baseline_hr": null,
+  "light": "normal",
+  "gesture_hand": "left",
+  "seconds": 30,
+  "start_time": "2026-10-25T21:09:59",
+  "end_time": "2026-10-25T21:10:29",
+  "delay_s": null,
+  "notes": "",
+  "discarded": false,
+  "git_commit": "a639000",
+  "vision": "camera"
+}

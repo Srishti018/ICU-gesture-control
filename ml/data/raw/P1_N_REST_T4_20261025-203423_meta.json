@@ -1,0 +1,19 @@
+{
+  "person": "P1",
+  "scenario": "N_REST",
+  "scenario_name": "rest",
+  "label": "no_gesture",
+  "trial": 4,
+  "bio_mode": "none",
+  "baseline_hr": null,
+  "light": "normal",
+  "gesture_hand": "left",
+  "seconds": 30,
+  "start_time": "2026-10-25T20:34:23",
+  "end_time": "2026-10-25T20:34:53",
+  "delay_s": null,
+  "notes": "",
+  "discarded": false,
+  "git_commit": "a639000",
+  "vision": "camera"
+}

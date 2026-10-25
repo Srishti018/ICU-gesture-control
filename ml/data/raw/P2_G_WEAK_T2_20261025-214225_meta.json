@@ -1,0 +1,19 @@
+{
+  "person": "P2",
+  "scenario": "G_WEAK",
+  "scenario_name": "weak_palm",
+  "label": "gesture",
+  "trial": 2,
+  "bio_mode": "none",
+  "baseline_hr": null,
+  "light": "normal",
+  "gesture_hand": "right",
+  "seconds": 30,
+  "start_time": "2026-10-25T21:42:25",
+  "end_time": "2026-10-25T21:42:55",
+  "delay_s": null,
+  "notes": "",
+  "discarded": true,
+  "git_commit": "a639000",
+  "vision": "camera"
+}

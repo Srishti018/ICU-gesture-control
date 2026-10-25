@@ -1,0 +1,19 @@
+{
+  "person": "P2",
+  "scenario": "G_PALM",
+  "scenario_name": "palm",
+  "label": "gesture",
+  "trial": 5,
+  "bio_mode": "none",
+  "baseline_hr": null,
+  "light": "normal",
+  "gesture_hand": "right",
+  "seconds": 30,
+  "start_time": "2026-10-25T22:23:57",
+  "end_time": "2026-10-25T22:24:27",
+  "delay_s": null,
+  "notes": "",
+  "discarded": false,
+  "git_commit": "a639000",
+  "vision": "camera"
+}

@@ -1,0 +1,312 @@
+2026-10-25T20:26:53 SAY: Session for P1, bio mode none, output /home/icugesturecontrol/icu-data/raw
+2026-10-25T20:26:53 SAY: SAFETY RULES (read them out loud to the participant):
+2026-10-25T20:26:53 SAY:   - Only team members who agree take part.
+2026-10-25T20:26:53 SAY:   - Anyone with a heart, lung or blood-pressure condition, or who feels unwell, skips the exercise trials.
+2026-10-25T20:26:53 SAY:   - Exercise stops IMMEDIATELY on dizziness, chest pain or unusual breathlessness.
+2026-10-25T20:26:53 SAY:   - Water is available. No camera images or video are saved. People are recorded as P1, P2, P3 only.
+2026-10-25T20:26:53 ASK: Does P1 agree to take part? (y/n)
+2026-10-25T20:27:02 ANSWER: y
+2026-10-25T20:27:02 ASK: Which hand makes the gestures? (right/left) [right]
+2026-10-25T20:27:09 ANSWER: left
+2026-10-25T20:27:09 ASK: 
+2026-10-25T20:27:09 ASK: >>> SETUP CHECK (20 s): hold the palm up for a few seconds, then rest it.
+2026-10-25T20:27:09 ASK:     Press Enter to start.
+2026-10-25T20:27:22 ANSWER: 
+2026-10-25T20:27:42 ASK: Did hand detection work (gesture high with the palm up)? (y/n)
+2026-10-25T20:27:50 ANSWER: y
+2026-10-25T20:27:50 SAY: Gesture block order: G_PALM_SHAKY-T2, G_WEAK-T2, G_PALM_DIM-T1, N_REST-T3, N_REST-T4, N_REST_SHAKY-T1, N_SCRATCH-T2, G_PALM_DIM-T2, G_PALM-T1, G_PALM-T2, N_REST-T1, G_PALM_SHAKY-T1, N_REST-T2, G_PALM-T5, N_NOHAND-T1, N_OTHER-T1, N_OTHER-T2, G_PALM-T3, N_SCRATCH-T4, N_SCRATCH-T1, N_SCRATCH-T3, G_PALM-T6, G_WEAK-T1, G_PALM-T4
+2026-10-25T20:27:50 SAY: 
+2026-10-25T20:27:50 SAY: === G_PALM_SHAKY (palm_shaky, label gesture) trial 2 ===
+2026-10-25T20:27:50 SAY: Participant: Hold your open palm up, and let your hand tremble slightly (small, gentle shake).
+2026-10-25T20:27:50 ASK: 
+2026-10-25T20:27:50 ASK: >>> When the participant is ready
+2026-10-25T20:27:50 ASK:     Press Enter to start.
+2026-10-25T20:28:29 ANSWER: 
+2026-10-25T20:28:59 SAY: Summary: mean gesture 0.94, hand 100%
+2026-10-25T20:28:59 ASK: k keep / r redo / n add a note:
+2026-10-25T20:29:22 ANSWER: k
+2026-10-25T20:29:33 SAY: 
+2026-10-25T20:29:33 SAY: === G_WEAK (weak_palm, label gesture) trial 2 ===
+2026-10-25T20:29:33 SAY: Participant: Hold your hand up towards the camera with fingers half bent, as if you were weak.
+2026-10-25T20:29:33 ASK: 
+2026-10-25T20:29:33 ASK: >>> When the participant is ready
+2026-10-25T20:29:33 ASK:     Press Enter to start.
+2026-10-25T20:29:47 ANSWER: 
+2026-10-25T20:30:17 SAY: Summary: mean gesture 0.25, hand 100%
+2026-10-25T20:30:17 ASK: k keep / r redo / n add a note:
+2026-10-25T20:30:23 ANSWER: k
+2026-10-25T20:30:33 ASK: 
+2026-10-25T20:30:33 ASK: >>> Dim the room lights now (G_PALM_DIM).
+2026-10-25T20:30:33 ASK:     Press Enter to start.
+2026-10-25T20:30:52 ANSWER: 
+2026-10-25T20:30:52 SAY: 
+2026-10-25T20:30:52 SAY: === G_PALM_DIM (palm_dim_light, label gesture) trial 1 ===
+2026-10-25T20:30:52 SAY: Participant: Same as before - lights are dimmed for this one.
+2026-10-25T20:30:52 ASK: 
+2026-10-25T20:30:52 ASK: >>> When the participant is ready
+2026-10-25T20:30:52 ASK:     Press Enter to start.
+2026-10-25T20:30:56 ANSWER: 
+2026-10-25T20:31:26 SAY: Summary: mean gesture 0.89, hand 100%
+2026-10-25T20:31:26 ASK: k keep / r redo / n add a note:
+2026-10-25T20:31:29 ANSWER: k
+2026-10-25T20:31:29 ASK: 
+2026-10-25T20:31:29 ASK: >>> Turn the room lights back on.
+2026-10-25T20:31:29 ASK:     Press Enter to start.
+2026-10-25T20:31:36 ANSWER: 
+2026-10-25T20:31:46 SAY: 
+2026-10-25T20:31:46 SAY: === N_REST (rest, label no_gesture) trial 3 ===
+2026-10-25T20:31:46 SAY: Participant: Rest your hand in view of the camera. Stay relaxed.
+2026-10-25T20:31:46 ASK: 
+2026-10-25T20:31:46 ASK: >>> When the participant is ready
+2026-10-25T20:31:46 ASK:     Press Enter to start.
+2026-10-25T20:33:23 ANSWER: 
+2026-10-25T20:33:53 SAY: Summary: mean gesture 0.00, hand 100%
+2026-10-25T20:33:53 ASK: k keep / r redo / n add a note:
+2026-10-25T20:33:53 ANSWER: 
+2026-10-25T20:33:53 ASK: k keep / r redo / n add a note:
+2026-10-25T20:34:02 ANSWER: k
+2026-10-25T20:34:12 SAY: 
+2026-10-25T20:34:12 SAY: === N_REST (rest, label no_gesture) trial 4 ===
+2026-10-25T20:34:12 SAY: Participant: Rest your hand in view of the camera. Stay relaxed.
+2026-10-25T20:34:12 ASK: 
+2026-10-25T20:34:12 ASK: >>> When the participant is ready
+2026-10-25T20:34:12 ASK:     Press Enter to start.
+2026-10-25T20:34:23 ANSWER: 
+2026-10-25T20:34:53 SAY: Summary: mean gesture 0.09, hand 100%
+2026-10-25T20:34:53 ASK: k keep / r redo / n add a note:
+2026-10-25T20:34:55 ANSWER: k
+2026-10-25T20:35:05 SAY: 
+2026-10-25T20:35:05 SAY: === N_REST_SHAKY (rest_shaky, label no_gesture) trial 1 ===
+2026-10-25T20:35:05 SAY: Participant: Rest your hand in view and let it tremble slightly. Do NOT hold your palm up.
+2026-10-25T20:35:05 ASK: 
+2026-10-25T20:35:05 ASK: >>> When the participant is ready
+2026-10-25T20:35:05 ASK:     Press Enter to start.
+2026-10-25T20:35:18 ANSWER: 
+2026-10-25T20:35:48 SAY: Summary: mean gesture 0.00, hand 100%
+2026-10-25T20:35:48 ASK: k keep / r redo / n add a note:
+2026-10-25T20:35:52 ANSWER: k
+2026-10-25T20:36:02 SAY: 
+2026-10-25T20:36:02 SAY: === N_SCRATCH (incidental, label no_gesture) trial 2 ===
+2026-10-25T20:36:02 SAY: Participant: Move naturally: scratch your face, adjust your sleeve, touch your hair. Do NOT hold your palm up.
+2026-10-25T20:36:02 ASK: 
+2026-10-25T20:36:02 ASK: >>> When the participant is ready
+2026-10-25T20:36:02 ASK:     Press Enter to start.
+2026-10-25T20:36:40 ANSWER: 
+2026-10-25T20:37:10 SAY: Summary: mean gesture 0.16, hand 90%
+2026-10-25T20:37:10 ASK: k keep / r redo / n add a note:
+2026-10-25T20:37:13 ANSWER: k
+2026-10-25T20:37:23 ASK: 
+2026-10-25T20:37:23 ASK: >>> Dim the room lights now (G_PALM_DIM).
+2026-10-25T20:37:23 ASK:     Press Enter to start.
+2026-10-25T20:41:43 ANSWER: 
+2026-10-25T20:41:43 SAY: 
+2026-10-25T20:41:43 SAY: === G_PALM_DIM (palm_dim_light, label gesture) trial 2 ===
+2026-10-25T20:41:43 SAY: Participant: Same as before - lights are dimmed for this one.
+2026-10-25T20:41:43 ASK: 
+2026-10-25T20:41:43 ASK: >>> When the participant is ready
+2026-10-25T20:41:43 ASK:     Press Enter to start.
+2026-10-25T20:41:50 ANSWER: 
+2026-10-25T20:42:20 SAY: Summary: mean gesture 0.96, hand 100%
+2026-10-25T20:42:20 ASK: k keep / r redo / n add a note:
+2026-10-25T20:42:26 ANSWER: k
+2026-10-25T20:42:26 ASK: 
+2026-10-25T20:42:26 ASK: >>> Turn the room lights back on.
+2026-10-25T20:42:26 ASK:     Press Enter to start.
+2026-10-25T20:43:11 ANSWER: 
+2026-10-25T20:43:21 SAY: 
+2026-10-25T20:43:21 SAY: === G_PALM (palm, label gesture) trial 1 ===
+2026-10-25T20:43:21 SAY: Participant: Hold your open palm up towards the camera, fingers spread, for the whole 30 seconds.
+2026-10-25T20:43:21 ASK: 
+2026-10-25T20:43:21 ASK: >>> When the participant is ready
+2026-10-25T20:43:21 ASK:     Press Enter to start.
+2026-10-25T20:44:08 ANSWER: 
+2026-10-25T20:44:38 SAY: Summary: mean gesture 0.93, hand 100%
+2026-10-25T20:44:38 ASK: k keep / r redo / n add a note:
+2026-10-25T20:44:44 ANSWER: k
+2026-10-25T20:44:54 SAY: 
+2026-10-25T20:44:54 SAY: === G_PALM (palm, label gesture) trial 2 ===
+2026-10-25T20:44:54 SAY: Participant: Hold your open palm up towards the camera, fingers spread, for the whole 30 seconds.
+2026-10-25T20:44:54 ASK: 
+2026-10-25T20:44:54 ASK: >>> When the participant is ready
+2026-10-25T20:44:54 ASK:     Press Enter to start.
+2026-10-25T20:46:36 ANSWER: 
+2026-10-25T20:47:06 SAY: Summary: mean gesture 0.93, hand 100%
+2026-10-25T20:47:06 ASK: k keep / r redo / n add a note:
+2026-10-25T20:52:02 ANSWER: k
+2026-10-25T20:52:12 SAY: 
+2026-10-25T20:52:12 SAY: === N_REST (rest, label no_gesture) trial 1 ===
+2026-10-25T20:52:12 SAY: Participant: Rest your hand in view of the camera. Stay relaxed.
+2026-10-25T20:52:12 ASK: 
+2026-10-25T20:52:12 ASK: >>> When the participant is ready
+2026-10-25T20:52:12 ASK:     Press Enter to start.
+2026-10-25T20:52:41 ANSWER: 
+2026-10-25T20:53:11 SAY: Summary: mean gesture 0.01, hand 100%
+2026-10-25T20:53:11 ASK: k keep / r redo / n add a note:
+2026-10-25T20:53:27 ANSWER: r
+2026-10-25T20:53:27 SAY: Marked as discarded; repeating this trial.
+2026-10-25T20:53:27 SAY: 
+2026-10-25T20:53:27 SAY: === N_REST (rest, label no_gesture) trial 1 ===
+2026-10-25T20:53:27 SAY: Participant: Rest your hand in view of the camera. Stay relaxed.
+2026-10-25T20:53:27 ASK: 
+2026-10-25T20:53:27 ASK: >>> When the participant is ready
+2026-10-25T20:53:27 ASK:     Press Enter to start.
+2026-10-25T20:53:35 ANSWER: 
+2026-10-25T20:54:05 SAY: Summary: mean gesture 0.33, hand 100%
+2026-10-25T20:54:05 ASK: k keep / r redo / n add a note:
+2026-10-25T20:55:38 ANSWER: r
+2026-10-25T20:55:39 SAY: Marked as discarded; repeating this trial.
+2026-10-25T20:55:39 SAY: 
+2026-10-25T20:55:39 SAY: === N_REST (rest, label no_gesture) trial 1 ===
+2026-10-25T20:55:39 SAY: Participant: Rest your hand in view of the camera. Stay relaxed.
+2026-10-25T20:55:39 ASK: 
+2026-10-25T20:55:39 ASK: >>> When the participant is ready
+2026-10-25T20:55:39 ASK:     Press Enter to start.
+2026-10-25T20:55:41 ANSWER: 
+2026-10-25T20:56:11 SAY: Summary: mean gesture 0.16, hand 100%
+2026-10-25T20:56:11 ASK: k keep / r redo / n add a note:
+2026-10-25T20:56:35 ANSWER: k
+2026-10-25T20:56:45 SAY: 
+2026-10-25T20:56:45 SAY: === G_PALM_SHAKY (palm_shaky, label gesture) trial 1 ===
+2026-10-25T20:56:45 SAY: Participant: Hold your open palm up, and let your hand tremble slightly (small, gentle shake).
+2026-10-25T20:56:45 ASK: 
+2026-10-25T20:56:45 ASK: >>> When the participant is ready
+2026-10-25T20:56:45 ASK:     Press Enter to start.
+2026-10-25T20:57:17 ANSWER: 
+2026-10-25T20:57:47 SAY: Summary: mean gesture 0.87, hand 100%
+2026-10-25T20:57:47 ASK: k keep / r redo / n add a note:
+2026-10-25T20:57:52 ANSWER: k
+2026-10-25T20:58:02 SAY: 
+2026-10-25T20:58:02 SAY: === N_REST (rest, label no_gesture) trial 2 ===
+2026-10-25T20:58:02 SAY: Participant: Rest your hand in view of the camera. Stay relaxed.
+2026-10-25T20:58:02 ASK: 
+2026-10-25T20:58:02 ASK: >>> When the participant is ready
+2026-10-25T20:58:02 ASK:     Press Enter to start.
+2026-10-25T20:58:18 ANSWER: 
+2026-10-25T20:58:48 SAY: Summary: mean gesture 0.52, hand 100%
+2026-10-25T20:58:48 ASK: k keep / r redo / n add a note:
+2026-10-25T20:59:58 ANSWER: k
+2026-10-25T21:00:08 SAY: 
+2026-10-25T21:00:08 SAY: === G_PALM (palm, label gesture) trial 5 ===
+2026-10-25T21:00:08 SAY: Participant: Hold your open palm up towards the camera, fingers spread, for the whole 30 seconds.
+2026-10-25T21:00:08 ASK: 
+2026-10-25T21:00:08 ASK: >>> When the participant is ready
+2026-10-25T21:00:08 ASK:     Press Enter to start.
+2026-10-25T21:01:16 ANSWER: 
+2026-10-25T21:01:46 SAY: Summary: mean gesture 0.98, hand 100%
+2026-10-25T21:01:46 ASK: k keep / r redo / n add a note:
+2026-10-25T21:02:01 ANSWER: k
+2026-10-25T21:02:11 SAY: 
+2026-10-25T21:02:11 SAY: === N_NOHAND (no_hand, label no_gesture) trial 1 ===
+2026-10-25T21:02:11 SAY: Participant: Keep your hand out of the camera's view.
+2026-10-25T21:02:11 ASK: 
+2026-10-25T21:02:11 ASK: >>> When the participant is ready
+2026-10-25T21:02:11 ASK:     Press Enter to start.
+2026-10-25T21:02:16 ANSWER: 
+2026-10-25T21:02:46 SAY: Summary: mean gesture 0.00, hand 0%
+2026-10-25T21:02:46 ASK: k keep / r redo / n add a note:
+2026-10-25T21:03:57 ANSWER: k
+2026-10-25T21:04:07 SAY: 
+2026-10-25T21:04:07 SAY: === N_OTHER (other_shapes, label no_gesture) trial 1 ===
+2026-10-25T21:04:07 SAY: Participant: Make other hand shapes: a fist, pointing, a thumbs up - but NOT an open palm.
+2026-10-25T21:04:07 ASK: 
+2026-10-25T21:04:07 ASK: >>> When the participant is ready
+2026-10-25T21:04:07 ASK:     Press Enter to start.
+2026-10-25T21:05:49 ANSWER: 
+2026-10-25T21:06:19 SAY: Summary: mean gesture 0.00, hand 100%
+2026-10-25T21:06:19 ASK: k keep / r redo / n add a note:
+2026-10-25T21:06:42 ANSWER: k
+2026-10-25T21:06:52 SAY: 
+2026-10-25T21:06:52 SAY: === N_OTHER (other_shapes, label no_gesture) trial 2 ===
+2026-10-25T21:06:52 SAY: Participant: Make other hand shapes: a fist, pointing, a thumbs up - but NOT an open palm.
+2026-10-25T21:06:52 ASK: 
+2026-10-25T21:06:52 ASK: >>> When the participant is ready
+2026-10-25T21:06:52 ASK:     Press Enter to start.
+2026-10-25T21:09:59 ANSWER: 
+2026-10-25T21:10:29 SAY: Summary: mean gesture 0.00, hand 100%
+2026-10-25T21:10:29 ASK: k keep / r redo / n add a note:
+2026-10-25T21:10:33 ANSWER: k
+2026-10-25T21:10:43 SAY: 
+2026-10-25T21:10:43 SAY: === G_PALM (palm, label gesture) trial 3 ===
+2026-10-25T21:10:43 SAY: Participant: Hold your open palm up towards the camera, fingers spread, for the whole 30 seconds.
+2026-10-25T21:10:43 ASK: 
+2026-10-25T21:10:43 ASK: >>> When the participant is ready
+2026-10-25T21:10:43 ASK:     Press Enter to start.
+2026-10-25T21:11:06 ANSWER: 
+2026-10-25T21:11:36 SAY: Summary: mean gesture 0.94, hand 100%
+2026-10-25T21:11:36 ASK: k keep / r redo / n add a note:
+2026-10-25T21:11:38 ANSWER: k
+2026-10-25T21:11:48 SAY: 
+2026-10-25T21:11:48 SAY: === N_SCRATCH (incidental, label no_gesture) trial 4 ===
+2026-10-25T21:11:48 SAY: Participant: Move naturally: scratch your face, adjust your sleeve, touch your hair. Do NOT hold your palm up.
+2026-10-25T21:11:48 ASK: 
+2026-10-25T21:11:48 ASK: >>> When the participant is ready
+2026-10-25T21:11:48 ASK:     Press Enter to start.
+2026-10-25T21:12:02 ANSWER: k
+2026-10-25T21:12:32 SAY: Summary: mean gesture 0.29, hand 100%
+2026-10-25T21:12:32 ASK: k keep / r redo / n add a note:
+2026-10-25T21:12:37 ANSWER: k
+2026-10-25T21:12:47 SAY: 
+2026-10-25T21:12:47 SAY: === N_SCRATCH (incidental, label no_gesture) trial 1 ===
+2026-10-25T21:12:47 SAY: Participant: Move naturally: scratch your face, adjust your sleeve, touch your hair. Do NOT hold your palm up.
+2026-10-25T21:12:47 ASK: 
+2026-10-25T21:12:47 ASK: >>> When the participant is ready
+2026-10-25T21:12:47 ASK:     Press Enter to start.
+2026-10-25T21:13:00 ANSWER: 
+2026-10-25T21:13:30 SAY: Summary: mean gesture 0.14, hand 100%
+2026-10-25T21:13:30 ASK: k keep / r redo / n add a note:
+2026-10-25T21:13:30 ANSWER: 
+2026-10-25T21:13:30 ASK: k keep / r redo / n add a note:
+2026-10-25T21:16:01 ANSWER: k
+2026-10-25T21:16:11 SAY: 
+2026-10-25T21:16:11 SAY: === N_SCRATCH (incidental, label no_gesture) trial 3 ===
+2026-10-25T21:16:11 SAY: Participant: Move naturally: scratch your face, adjust your sleeve, touch your hair. Do NOT hold your palm up.
+2026-10-25T21:16:11 ASK: 
+2026-10-25T21:16:11 ASK: >>> When the participant is ready
+2026-10-25T21:16:11 ASK:     Press Enter to start.
+2026-10-25T21:16:34 ANSWER: 
+2026-10-25T21:17:04 SAY: Summary: mean gesture 0.00, hand 100%
+2026-10-25T21:17:04 ASK: k keep / r redo / n add a note:
+2026-10-25T21:19:26 ANSWER: k
+2026-10-25T21:19:36 SAY: 
+2026-10-25T21:19:36 SAY: === G_PALM (palm, label gesture) trial 6 ===
+2026-10-25T21:19:36 SAY: Participant: Hold your open palm up towards the camera, fingers spread, for the whole 30 seconds.
+2026-10-25T21:19:36 ASK: 
+2026-10-25T21:19:36 ASK: >>> When the participant is ready
+2026-10-25T21:19:36 ASK:     Press Enter to start.
+2026-10-25T21:19:53 ANSWER: 
+2026-10-25T21:20:23 SAY: Summary: mean gesture 0.95, hand 100%
+2026-10-25T21:20:23 ASK: k keep / r redo / n add a note:
+2026-10-25T21:20:34 ANSWER: k
+2026-10-25T21:20:44 SAY: 
+2026-10-25T21:20:44 SAY: === G_WEAK (weak_palm, label gesture) trial 1 ===
+2026-10-25T21:20:44 SAY: Participant: Hold your hand up towards the camera with fingers half bent, as if you were weak.
+2026-10-25T21:20:44 ASK: 
+2026-10-25T21:20:44 ASK: >>> When the participant is ready
+2026-10-25T21:20:44 ASK:     Press Enter to start.
+2026-10-25T21:20:51 ANSWER: 
+2026-10-25T21:21:21 SAY: Summary: mean gesture 0.54, hand 100%
+2026-10-25T21:21:21 ASK: k keep / r redo / n add a note:
+2026-10-25T21:21:24 ANSWER: r
+2026-10-25T21:21:24 SAY: Marked as discarded; repeating this trial.
+2026-10-25T21:21:24 SAY: 
+2026-10-25T21:21:24 SAY: === G_WEAK (weak_palm, label gesture) trial 1 ===
+2026-10-25T21:21:24 SAY: Participant: Hold your hand up towards the camera with fingers half bent, as if you were weak.
+2026-10-25T21:21:24 ASK: 
+2026-10-25T21:21:24 ASK: >>> When the participant is ready
+2026-10-25T21:21:24 ASK:     Press Enter to start.
+2026-10-25T21:21:27 ANSWER: 
+2026-10-25T21:21:57 SAY: Summary: mean gesture 0.95, hand 100%
+2026-10-25T21:21:57 ASK: k keep / r redo / n add a note:
+2026-10-25T21:22:03 ANSWER: k
+2026-10-25T21:22:13 SAY: 
+2026-10-25T21:22:13 SAY: === G_PALM (palm, label gesture) trial 4 ===
+2026-10-25T21:22:13 SAY: Participant: Hold your open palm up towards the camera, fingers spread, for the whole 30 seconds.
+2026-10-25T21:22:13 ASK: 
+2026-10-25T21:22:13 ASK: >>> When the participant is ready
+2026-10-25T21:22:13 ASK:     Press Enter to start.
+2026-10-25T21:22:25 ANSWER: 
+2026-10-25T21:22:55 SAY: Summary: mean gesture 0.95, hand 100%
+2026-10-25T21:22:55 ASK: k keep / r redo / n add a note:
+2026-10-25T21:23:04 ANSWER: k
+2026-10-25T21:23:04 SAY: 
+2026-10-25T21:23:04 SAY: Gesture session for P1 finished.

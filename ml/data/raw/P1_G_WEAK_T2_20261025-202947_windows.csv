@@ -1,0 +1,11 @@
+person,scenario,scenario_name,trial,label,window_idx,ts,gesture_conf,tremor,hand_present,n_frames,n_hand_frames,fps,hr,spo2,hr_delta,finger,bio_quality,bio_mode,baseline_hr,light,gesture_hand,discarded,gesture
+P1,G_WEAK,weak_palm,2,gesture,0,2026-10-25T20:29:50,0.276,0.009,1,15,15,5.0,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,1,2026-10-25T20:29:53,0.25,0.01,1,15,15,5.0,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,2,2026-10-25T20:29:56,0.237,0.01,1,16,16,5.3,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,3,2026-10-25T20:29:59,0.234,0.016,1,15,15,5.0,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,4,2026-10-25T20:30:02,0.227,0.01,1,15,15,5.0,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,5,2026-10-25T20:30:05,0.283,0.023,1,16,16,5.3,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,6,2026-10-25T20:30:08,0.266,0.01,1,15,15,5.0,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,7,2026-10-25T20:30:11,0.275,0.008,1,15,15,5.0,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,8,2026-10-25T20:30:14,0.239,0.009,1,16,16,5.3,,,,,,none,,normal,left,0,gesture
+P1,G_WEAK,weak_palm,2,gesture,9,2026-10-25T20:30:17,0.228,0.007,1,15,15,5.0,,,,,,none,,normal,left,0,gesture

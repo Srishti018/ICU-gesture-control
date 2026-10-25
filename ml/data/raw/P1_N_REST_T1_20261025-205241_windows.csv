@@ -1,0 +1,11 @@
+person,scenario,scenario_name,trial,label,window_idx,ts,gesture_conf,tremor,hand_present,n_frames,n_hand_frames,fps,hr,spo2,hr_delta,finger,bio_quality,bio_mode,baseline_hr,light,gesture_hand,discarded,gesture
+P1,N_REST,rest,1,no_gesture,0,2026-10-25T20:52:44,0.022,0.161,1,12,11,4.0,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,1,2026-10-25T20:52:47,0.007,0.139,1,14,14,4.7,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,2,2026-10-25T20:52:50,0.011,0.083,1,14,14,4.7,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,3,2026-10-25T20:52:53,0.01,0.025,1,13,13,4.3,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,4,2026-10-25T20:52:56,0.007,0.012,1,14,14,4.7,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,5,2026-10-25T20:52:59,0.008,0.016,1,13,13,4.3,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,6,2026-10-25T20:53:02,0.011,0.02,1,14,14,4.7,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,7,2026-10-25T20:53:05,0.015,0.019,1,13,13,4.3,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,8,2026-10-25T20:53:08,0.011,0.018,1,14,14,4.7,,,,,,none,,normal,left,1,no_gesture
+P1,N_REST,rest,1,no_gesture,9,2026-10-25T20:53:11,0.012,0.019,1,13,13,4.3,,,,,,none,,normal,left,1,no_gesture

@@ -1,0 +1,11 @@
+person,scenario,scenario_name,trial,label,window_idx,ts,gesture_conf,tremor,hand_present,n_frames,n_hand_frames,fps,hr,spo2,hr_delta,finger,bio_quality,bio_mode,baseline_hr,light,gesture_hand,discarded,gesture
+P1,G_PALM,palm,3,gesture,0,2026-10-25T21:11:09,0.951,0.032,1,13,13,4.3,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,1,2026-10-25T21:11:12,0.934,0.009,1,14,14,4.7,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,2,2026-10-25T21:11:15,0.917,0.033,1,13,13,4.3,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,3,2026-10-25T21:11:18,0.937,0.025,1,14,14,4.7,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,4,2026-10-25T21:11:21,0.946,0.016,1,13,13,4.3,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,5,2026-10-25T21:11:24,0.939,0.046,1,14,14,4.7,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,6,2026-10-25T21:11:27,0.944,0.032,1,13,13,4.3,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,7,2026-10-25T21:11:30,0.946,0.031,1,14,14,4.7,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,8,2026-10-25T21:11:33,0.942,0.026,1,13,13,4.3,,,,,,none,,normal,left,0,gesture
+P1,G_PALM,palm,3,gesture,9,2026-10-25T21:11:36,0.947,0.02,1,14,14,4.7,,,,,,none,,normal,left,0,gesture

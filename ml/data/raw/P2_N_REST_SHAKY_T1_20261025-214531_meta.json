@@ -1,0 +1,19 @@
+{
+  "person": "P2",
+  "scenario": "N_REST_SHAKY",
+  "scenario_name": "rest_shaky",
+  "label": "no_gesture",
+  "trial": 1,
+  "bio_mode": "none",
+  "baseline_hr": null,
+  "light": "normal",
+  "gesture_hand": "right",
+  "seconds": 30,
+  "start_time": "2026-10-25T21:45:31",
+  "end_time": "2026-10-25T21:46:01",
+  "delay_s": null,
+  "notes": "",
+  "discarded": false,
+  "git_commit": "a639000",
+  "vision": "camera"
+}

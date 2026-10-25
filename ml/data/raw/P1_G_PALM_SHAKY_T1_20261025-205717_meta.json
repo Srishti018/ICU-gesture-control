@@ -1,0 +1,19 @@
+{
+  "person": "P1",
+  "scenario": "G_PALM_SHAKY",
+  "scenario_name": "palm_shaky",
+  "label": "gesture",
+  "trial": 1,
+  "bio_mode": "none",
+  "baseline_hr": null,
+  "light": "normal",
+  "gesture_hand": "left",
+  "seconds": 30,
+  "start_time": "2026-10-25T20:57:17",
+  "end_time": "2026-10-25T20:57:47",
+  "delay_s": null,
+  "notes": "",
+  "discarded": false,
+  "git_commit": "a639000",
+  "vision": "camera"
+}

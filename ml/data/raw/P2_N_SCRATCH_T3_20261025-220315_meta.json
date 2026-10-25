@@ -1,0 +1,19 @@
+{
+  "person": "P2",
+  "scenario": "N_SCRATCH",
+  "scenario_name": "incidental",
+  "label": "no_gesture",
+  "trial": 3,
+  "bio_mode": "none",
+  "baseline_hr": null,
+  "light": "normal",
+  "gesture_hand": "right",
+  "seconds": 30,
+  "start_time": "2026-10-25T22:03:15",
+  "end_time": "2026-10-25T22:03:45",
+  "delay_s": null,
+  "notes": "",
+  "discarded": false,
+  "git_commit": "a639000",
+  "vision": "camera"
+}

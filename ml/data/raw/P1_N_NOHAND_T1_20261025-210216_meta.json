@@ -1,0 +1,19 @@
+{
+  "person": "P1",
+  "scenario": "N_NOHAND",
+  "scenario_name": "no_hand",
+  "label": "no_gesture",
+  "trial": 1,
+  "bio_mode": "none",
+  "baseline_hr": null,
+  "light": "normal",
+  "gesture_hand": "left",
+  "seconds": 30,
+  "start_time": "2026-10-25T21:02:16",
+  "end_time": "2026-10-25T21:02:46",
+  "delay_s": null,
+  "notes": "",
+  "discarded": false,
+  "git_commit": "a639000",
+  "vision": "camera"
+}
