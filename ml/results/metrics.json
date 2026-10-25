@@ -1,0 +1,806 @@
+{
+  "kind": "composed",
+  "synthetic": false,
+  "seed": 42,
+  "dataset": {
+    "participants": [
+      "P1",
+      "P2"
+    ],
+    "gesture_windows": {
+      "gesture": 216,
+      "no_gesture": 216
+    },
+    "gesture_windows_per_person": {
+      "P1": {
+        "gesture": 108,
+        "no_gesture": 108
+      },
+      "P2": {
+        "gesture": 108,
+        "no_gesture": 108
+      }
+    },
+    "gesture_exclusions": {
+      "first_window": 52,
+      "discarded_trials": 4,
+      "discarded_windows": 36,
+      "missing_bio": 0,
+      "missing_bio_by_scenario": {},
+      "kept": 432,
+      "attempts_dropped": {
+        "flagged_discarded": [
+          "P1_G_WEAK_T1_20261025-212051",
+          "P1_N_REST_T1_20261025-205241",
+          "P1_N_REST_T1_20261025-205335",
+          "P2_G_WEAK_T2_20261025-214225"
+        ],
+        "unflagged_duplicates": [],
+        "total": 4
+      }
+    },
+    "gesture_conf_by_scenario": {
+      "P1/G_PALM": {
+        "label": "gesture",
+        "windows": 54,
+        "median": 0.9495,
+        "share_ge_0_8": 1.0
+      },
+      "P1/G_PALM_DIM": {
+        "label": "gesture",
+        "windows": 18,
+        "median": 0.923,
+        "share_ge_0_8": 1.0
+      },
+      "P1/G_PALM_SHAKY": {
+        "label": "gesture",
+        "windows": 18,
+        "median": 0.924,
+        "share_ge_0_8": 0.9444
+      },
+      "P1/G_WEAK": {
+        "label": "gesture",
+        "windows": 18,
+        "median": 0.6015,
+        "share_ge_0_8": 0.5
+      },
+      "P1/N_NOHAND": {
+        "label": "no_gesture",
+        "windows": 9,
+        "median": 0.0,
+        "share_ge_0_8": 0.0
+      },
+      "P1/N_OTHER": {
+        "label": "no_gesture",
+        "windows": 18,
+        "median": 0.0,
+        "share_ge_0_8": 0.0
+      },
+      "P1/N_REST": {
+        "label": "no_gesture",
+        "windows": 36,
+        "median": 0.11,
+        "share_ge_0_8": 0.0
+      },
+      "P1/N_REST_SHAKY": {
+        "label": "no_gesture",
+        "windows": 9,
+        "median": 0.0,
+        "share_ge_0_8": 0.0
+      },
+      "P1/N_SCRATCH": {
+        "label": "no_gesture",
+        "windows": 36,
+        "median": 0.071,
+        "share_ge_0_8": 0.0
+      },
+      "P2/G_PALM": {
+        "label": "gesture",
+        "windows": 54,
+        "median": 1.0,
+        "share_ge_0_8": 1.0
+      },
+      "P2/G_PALM_DIM": {
+        "label": "gesture",
+        "windows": 18,
+        "median": 0.9935,
+        "share_ge_0_8": 1.0
+      },
+      "P2/G_PALM_SHAKY": {
+        "label": "gesture",
+        "windows": 18,
+        "median": 0.989,
+        "share_ge_0_8": 1.0
+      },
+      "P2/G_WEAK": {
+        "label": "gesture",
+        "windows": 18,
+        "median": 0.918,
+        "share_ge_0_8": 0.8333
+      },
+      "P2/N_NOHAND": {
+        "label": "no_gesture",
+        "windows": 9,
+        "median": 0.0,
+        "share_ge_0_8": 0.0
+      },
+      "P2/N_OTHER": {
+        "label": "no_gesture",
+        "windows": 18,
+        "median": 0.0,
+        "share_ge_0_8": 0.0
+      },
+      "P2/N_REST": {
+        "label": "no_gesture",
+        "windows": 36,
+        "median": 0.843,
+        "share_ge_0_8": 0.6667
+      },
+      "P2/N_REST_SHAKY": {
+        "label": "no_gesture",
+        "windows": 9,
+        "median": 0.934,
+        "share_ge_0_8": 1.0
+      },
+      "P2/N_SCRATCH": {
+        "label": "no_gesture",
+        "windows": 36,
+        "median": 0.24,
+        "share_ge_0_8": 0.0
+      }
+    },
+    "vitals_csv": "ml/data/public/bidmc_news2_windows.csv",
+    "vitals_windows": {
+      "normal": 3392,
+      "abnormal": 1879
+    },
+    "n_patients": 49
+  },
+  "pairing": {
+    "no_gesture_abnormal": "routine",
+    "rule": "gesture+normal=urgent, gesture+abnormal=critical, no_gesture+normal=routine, no_gesture+abnormal=routine",
+    "balanced": "n = min(#gesture, #no_gesture) windows per class"
+  },
+  "split": {
+    "kind": "leave-one-participant-out x patient-grouped",
+    "vitals_folds": 3,
+    "patient_groups": {
+      "0": [
+        "bidmc_18",
+        "bidmc_21",
+        "bidmc_25",
+        "bidmc_31",
+        "bidmc_32",
+        "bidmc_33",
+        "bidmc_35",
+        "bidmc_36",
+        "bidmc_40",
+        "bidmc_41",
+        "bidmc_43",
+        "bidmc_44",
+        "bidmc_45",
+        "bidmc_47",
+        "bidmc_48",
+        "bidmc_53"
+      ],
+      "1": [
+        "bidmc_01",
+        "bidmc_02",
+        "bidmc_03",
+        "bidmc_09",
+        "bidmc_10",
+        "bidmc_13",
+        "bidmc_16",
+        "bidmc_17",
+        "bidmc_19",
+        "bidmc_20",
+        "bidmc_22",
+        "bidmc_23",
+        "bidmc_24",
+        "bidmc_28",
+        "bidmc_38",
+        "bidmc_46",
+        "bidmc_52"
+      ],
+      "2": [
+        "bidmc_04",
+        "bidmc_06",
+        "bidmc_08",
+        "bidmc_11",
+        "bidmc_12",
+        "bidmc_26",
+        "bidmc_27",
+        "bidmc_29",
+        "bidmc_30",
+        "bidmc_34",
+        "bidmc_37",
+        "bidmc_39",
+        "bidmc_42",
+        "bidmc_49",
+        "bidmc_50",
+        "bidmc_51"
+      ]
+    }
+  },
+  "model_desc": "StandardScaler + LogisticRegression(C=1.0, class_weight=balanced, max_iter=2000)",
+  "folds": [
+    {
+      "fold": 0,
+      "test_person": "P1",
+      "test_group": 0,
+      "test_patients": [
+        "bidmc_18",
+        "bidmc_21",
+        "bidmc_25",
+        "bidmc_31",
+        "bidmc_32",
+        "bidmc_33",
+        "bidmc_35",
+        "bidmc_36",
+        "bidmc_40",
+        "bidmc_41",
+        "bidmc_43",
+        "bidmc_44",
+        "bidmc_45",
+        "bidmc_47",
+        "bidmc_48",
+        "bidmc_53"
+      ],
+      "n_train": 324,
+      "n_test": 324,
+      "model": {
+        "accuracy": 0.9105,
+        "macro_f1": 0.9121,
+        "alert_recall": 0.8796,
+        "alert_fpr": 0.0185,
+        "critical_precision": 0.9794,
+        "critical_recall": 0.8796
+      },
+      "rule": {
+        "accuracy": 0.7716,
+        "macro_f1": 0.7613,
+        "alert_recall": 0.9074,
+        "alert_fpr": 0.0,
+        "critical_precision": 0.8056,
+        "critical_recall": 0.537
+      },
+      "gesture_only": {
+        "accuracy": 0.6358,
+        "macro_f1": 0.52,
+        "alert_recall": 0.9074,
+        "alert_fpr": 0.0,
+        "critical_precision": null,
+        "critical_recall": 0.0
+      }
+    },
+    {
+      "fold": 1,
+      "test_person": "P1",
+      "test_group": 1,
+      "test_patients": [
+        "bidmc_01",
+        "bidmc_02",
+        "bidmc_03",
+        "bidmc_09",
+        "bidmc_10",
+        "bidmc_13",
+        "bidmc_16",
+        "bidmc_17",
+        "bidmc_19",
+        "bidmc_20",
+        "bidmc_22",
+        "bidmc_23",
+        "bidmc_24",
+        "bidmc_28",
+        "bidmc_38",
+        "bidmc_46",
+        "bidmc_52"
+      ],
+      "n_train": 324,
+      "n_test": 324,
+      "model": {
+        "accuracy": 0.8272,
+        "macro_f1": 0.82,
+        "alert_recall": 0.8194,
+        "alert_fpr": 0.0,
+        "critical_precision": 1.0,
+        "critical_recall": 0.5926
+      },
+      "rule": {
+        "accuracy": 0.7315,
+        "macro_f1": 0.7049,
+        "alert_recall": 0.9074,
+        "alert_fpr": 0.0,
+        "critical_precision": 0.8444,
+        "critical_recall": 0.3519
+      },
+      "gesture_only": {
+        "accuracy": 0.6358,
+        "macro_f1": 0.52,
+        "alert_recall": 0.9074,
+        "alert_fpr": 0.0,
+        "critical_precision": null,
+        "critical_recall": 0.0
+      }
+    },
+    {
+      "fold": 2,
+      "test_person": "P1",
+      "test_group": 2,
+      "test_patients": [
+        "bidmc_04",
+        "bidmc_06",
+        "bidmc_08",
+        "bidmc_11",
+        "bidmc_12",
+        "bidmc_26",
+        "bidmc_27",
+        "bidmc_29",
+        "bidmc_30",
+        "bidmc_34",
+        "bidmc_37",
+        "bidmc_39",
+        "bidmc_42",
+        "bidmc_49",
+        "bidmc_50",
+        "bidmc_51"
+      ],
+      "n_train": 324,
+      "n_test": 324,
+      "model": {
+        "accuracy": 0.8858,
+        "macro_f1": 0.884,
+        "alert_recall": 0.8889,
+        "alert_fpr": 0.0,
+        "critical_precision": 0.8829,
+        "critical_recall": 0.9074
+      },
+      "rule": {
+        "accuracy": 0.8272,
+        "macro_f1": 0.8215,
+        "alert_recall": 0.9074,
+        "alert_fpr": 0.0,
+        "critical_precision": 0.8974,
+        "critical_recall": 0.6481
+      },
+      "gesture_only": {
+        "accuracy": 0.6358,
+        "macro_f1": 0.52,
+        "alert_recall": 0.9074,
+        "alert_fpr": 0.0,
+        "critical_precision": null,
+        "critical_recall": 0.0
+      }
+    },
+    {
+      "fold": 3,
+      "test_person": "P2",
+      "test_group": 0,
+      "test_patients": [
+        "bidmc_18",
+        "bidmc_21",
+        "bidmc_25",
+        "bidmc_31",
+        "bidmc_32",
+        "bidmc_33",
+        "bidmc_35",
+        "bidmc_36",
+        "bidmc_40",
+        "bidmc_41",
+        "bidmc_43",
+        "bidmc_44",
+        "bidmc_45",
+        "bidmc_47",
+        "bidmc_48",
+        "bidmc_53"
+      ],
+      "n_train": 324,
+      "n_test": 324,
+      "model": {
+        "accuracy": 0.7716,
+        "macro_f1": 0.7648,
+        "alert_recall": 1.0,
+        "alert_fpr": 0.4444,
+        "critical_precision": 0.7961,
+        "critical_recall": 0.7593
+      },
+      "rule": {
+        "accuracy": 0.6883,
+        "macro_f1": 0.6911,
+        "alert_recall": 0.9722,
+        "alert_fpr": 0.3056,
+        "critical_precision": 0.6522,
+        "critical_recall": 0.5556
+      },
+      "gesture_only": {
+        "accuracy": 0.5556,
+        "macro_f1": 0.464,
+        "alert_recall": 0.9722,
+        "alert_fpr": 0.3056,
+        "critical_precision": null,
+        "critical_recall": 0.0
+      }
+    },
+    {
+      "fold": 4,
+      "test_person": "P2",
+      "test_group": 1,
+      "test_patients": [
+        "bidmc_01",
+        "bidmc_02",
+        "bidmc_03",
+        "bidmc_09",
+        "bidmc_10",
+        "bidmc_13",
+        "bidmc_16",
+        "bidmc_17",
+        "bidmc_19",
+        "bidmc_20",
+        "bidmc_22",
+        "bidmc_23",
+        "bidmc_24",
+        "bidmc_28",
+        "bidmc_38",
+        "bidmc_46",
+        "bidmc_52"
+      ],
+      "n_train": 324,
+      "n_test": 324,
+      "model": {
+        "accuracy": 0.7099,
+        "macro_f1": 0.7068,
+        "alert_recall": 1.0,
+        "alert_fpr": 0.4444,
+        "critical_precision": 0.8378,
+        "critical_recall": 0.5741
+      },
+      "rule": {
+        "accuracy": 0.6204,
+        "macro_f1": 0.6041,
+        "alert_recall": 0.9722,
+        "alert_fpr": 0.3056,
+        "critical_precision": 0.6383,
+        "critical_recall": 0.2778
+      },
+      "gesture_only": {
+        "accuracy": 0.5556,
+        "macro_f1": 0.464,
+        "alert_recall": 0.9722,
+        "alert_fpr": 0.3056,
+        "critical_precision": null,
+        "critical_recall": 0.0
+      }
+    },
+    {
+      "fold": 5,
+      "test_person": "P2",
+      "test_group": 2,
+      "test_patients": [
+        "bidmc_04",
+        "bidmc_06",
+        "bidmc_08",
+        "bidmc_11",
+        "bidmc_12",
+        "bidmc_26",
+        "bidmc_27",
+        "bidmc_29",
+        "bidmc_30",
+        "bidmc_34",
+        "bidmc_37",
+        "bidmc_39",
+        "bidmc_42",
+        "bidmc_49",
+        "bidmc_50",
+        "bidmc_51"
+      ],
+      "n_train": 324,
+      "n_test": 324,
+      "model": {
+        "accuracy": 0.8086,
+        "macro_f1": 0.8028,
+        "alert_recall": 1.0,
+        "alert_fpr": 0.4074,
+        "critical_precision": 0.7105,
+        "critical_recall": 1.0
+      },
+      "rule": {
+        "accuracy": 0.7469,
+        "macro_f1": 0.7484,
+        "alert_recall": 0.9722,
+        "alert_fpr": 0.3056,
+        "critical_precision": 0.7579,
+        "critical_recall": 0.6667
+      },
+      "gesture_only": {
+        "accuracy": 0.5556,
+        "macro_f1": 0.464,
+        "alert_recall": 0.9722,
+        "alert_fpr": 0.3056,
+        "critical_precision": null,
+        "critical_recall": 0.0
+      }
+    }
+  ],
+  "mean": {
+    "model": {
+      "accuracy": {
+        "mean": 0.8189,
+        "sd": 0.0737
+      },
+      "macro_f1": {
+        "mean": 0.8151,
+        "sd": 0.0756
+      },
+      "alert_recall": {
+        "mean": 0.9313,
+        "sd": 0.0789
+      },
+      "alert_fpr": {
+        "mean": 0.2191,
+        "sd": 0.2338
+      },
+      "critical_precision": {
+        "mean": 0.8678,
+        "sd": 0.1104
+      },
+      "critical_recall": {
+        "mean": 0.7855,
+        "sd": 0.1745
+      }
+    },
+    "rule": {
+      "accuracy": {
+        "mean": 0.731,
+        "sd": 0.071
+      },
+      "macro_f1": {
+        "mean": 0.7219,
+        "sd": 0.0739
+      },
+      "alert_recall": {
+        "mean": 0.9398,
+        "sd": 0.0355
+      },
+      "alert_fpr": {
+        "mean": 0.1528,
+        "sd": 0.1674
+      },
+      "critical_precision": {
+        "mean": 0.766,
+        "sd": 0.1042
+      },
+      "critical_recall": {
+        "mean": 0.5062,
+        "sd": 0.1583
+      }
+    },
+    "gesture_only": {
+      "accuracy": {
+        "mean": 0.5957,
+        "sd": 0.0439
+      },
+      "macro_f1": {
+        "mean": 0.492,
+        "sd": 0.0307
+      },
+      "alert_recall": {
+        "mean": 0.9398,
+        "sd": 0.0355
+      },
+      "alert_fpr": {
+        "mean": 0.1528,
+        "sd": 0.1674
+      },
+      "critical_precision": {
+        "mean": null,
+        "sd": null
+      },
+      "critical_recall": {
+        "mean": 0.0,
+        "sd": 0.0
+      }
+    }
+  },
+  "pooled": {
+    "model": {
+      "accuracy": 0.8189,
+      "macro_f1": 0.8186,
+      "per_class": {
+        "routine": {
+          "precision": 0.8504,
+          "recall": 0.7809,
+          "f1": 0.8142,
+          "support": 648
+        },
+        "urgent": {
+          "precision": 0.7714,
+          "recall": 0.8904,
+          "f1": 0.8266,
+          "support": 648
+        },
+        "critical": {
+          "precision": 0.8469,
+          "recall": 0.7855,
+          "f1": 0.8151,
+          "support": 648
+        }
+      },
+      "confusion": [
+        [
+          506,
+          81,
+          61
+        ],
+        [
+          40,
+          577,
+          31
+        ],
+        [
+          49,
+          90,
+          509
+        ]
+      ],
+      "alert": {
+        "precision": 0.8947,
+        "recall": 0.9313,
+        "false_positive_rate": 0.2191
+      },
+      "critical": {
+        "precision": 0.8469,
+        "recall": 0.7855
+      },
+      "per_person_accuracy": {
+        "P1": 0.8745,
+        "P2": 0.7634
+      }
+    },
+    "rule": {
+      "accuracy": 0.731,
+      "macro_f1": 0.7262,
+      "per_class": {
+        "routine": {
+          "precision": 0.8756,
+          "recall": 0.8472,
+          "f1": 0.8612,
+          "support": 648
+        },
+        "urgent": {
+          "precision": 0.6126,
+          "recall": 0.8395,
+          "f1": 0.7083,
+          "support": 648
+        },
+        "critical": {
+          "precision": 0.7646,
+          "recall": 0.5062,
+          "f1": 0.6091,
+          "support": 648
+        }
+      },
+      "confusion": [
+        [
+          549,
+          63,
+          36
+        ],
+        [
+          39,
+          544,
+          65
+        ],
+        [
+          39,
+          281,
+          328
+        ]
+      ],
+      "alert": {
+        "precision": 0.9248,
+        "recall": 0.9398,
+        "false_positive_rate": 0.1528
+      },
+      "critical": {
+        "precision": 0.7646,
+        "recall": 0.5062
+      },
+      "per_person_accuracy": {
+        "P1": 0.7767,
+        "P2": 0.6852
+      }
+    },
+    "gesture_only": {
+      "accuracy": 0.5957,
+      "macro_f1": 0.4937,
+      "per_class": {
+        "routine": {
+          "precision": 0.8756,
+          "recall": 0.8472,
+          "f1": 0.8612,
+          "support": 648
+        },
+        "urgent": {
+          "precision": 0.4624,
+          "recall": 0.9398,
+          "f1": 0.6198,
+          "support": 648
+        },
+        "critical": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "support": 648
+        }
+      },
+      "confusion": [
+        [
+          549,
+          99,
+          0
+        ],
+        [
+          39,
+          609,
+          0
+        ],
+        [
+          39,
+          609,
+          0
+        ]
+      ],
+      "alert": {
+        "precision": 0.9248,
+        "recall": 0.9398,
+        "false_positive_rate": 0.1528
+      },
+      "critical": {
+        "precision": null,
+        "recall": 0.0
+      },
+      "per_person_accuracy": {
+        "P1": 0.6358,
+        "P2": 0.5556
+      }
+    }
+  },
+  "random_split": {
+    "accuracy": 0.8843,
+    "macro_f1": 0.8829,
+    "note": "A random split looks better because the same participant and the same ICU patient appear in both training and test pairs (and windows from one 30-s trial or one patient recording are near-copies). The participant x patient-grouped split is the honest estimate for a new person and a new patient."
+  },
+  "coefficients": {
+    "routine": {
+      "gesture_conf": -1.7444265371775107,
+      "tremor": 0.8647671916083721,
+      "hr_delta": 0.06851424381804093,
+      "spo2": -0.19710383148779836,
+      "intercept": 0.6873448297847055
+    },
+    "urgent": {
+      "gesture_conf": 0.9366382341868567,
+      "tremor": -0.48773942317609104,
+      "hr_delta": -1.1686376653303154,
+      "spo2": 2.010439513704477,
+      "intercept": -0.4740437608021033
+    },
+    "critical": {
+      "gesture_conf": 0.8077883029906553,
+      "tremor": -0.37702776843228375,
+      "hr_delta": 1.100123421512277,
+      "spo2": -1.8133356822166835,
+      "intercept": -0.2133010689826095
+    }
+  },
+  "final": {
+    "n_pairs": 648,
+    "windows_per_label": {
+      "routine": 216,
+      "urgent": 216,
+      "critical": 216
+    },
+    "parity_max_abs_diff": 2.220446049250313e-16,
+    "model_json": "ml/models/model.json"
+  }
+}

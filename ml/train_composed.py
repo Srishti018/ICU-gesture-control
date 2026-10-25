@@ -65,7 +65,17 @@ def load_gestures(folder) -> pd.DataFrame:
     if not is_gesture_only(data):
         raise SystemExit(f"{folder}: these are not gesture-only files (no 'gesture' column); "
                          "record them with `python -m ml.collect.session --bio none`")
-    kept, excl = apply_exclusions(data)  # drops first window of each trial and discarded trials
+    discarded_attempts = sorted(data.loc[data["discarded"] == 1, "trial_id"].unique())
+    # A redone trial whose earlier attempt was not flagged: keep only the latest non-discarded attempt.
+    # trial_id ends in _YYYYMMDD-HHMMSS, so the latest attempt sorts last.
+    live = data[data["discarded"] == 0].drop_duplicates("trial_id")
+    unflagged = []
+    for _, attempts in live.groupby(["person", "scenario", "trial"])["trial_id"]:
+        unflagged += sorted(attempts)[:-1]
+    data.loc[data["trial_id"].isin(unflagged), "discarded"] = 1
+    kept, excl = apply_exclusions(data)  # drops first window of each trial and discarded attempts
+    excl["attempts_dropped"] = {"flagged_discarded": discarded_attempts, "unflagged_duplicates": sorted(unflagged),
+                                "total": len(discarded_attempts) + len(unflagged)}
     kept = kept[["person", "trial_id", "scenario", "gesture", "gesture_conf", "tremor"]].copy()
     kept["gesture_conf"] = kept["gesture_conf"].astype(float)
     kept["tremor"] = kept["tremor"].astype(float)
@@ -326,6 +336,11 @@ def run(gestures_dir, vitals_csv, out_dir, models_dir=None, *, vitals_folds=DEFA
             "gesture_windows_per_person": {p: {k: int(v) for k, v in gest[gest["person"] == p]["gesture"]
                                                .value_counts().items()} for p in people},
             "gesture_exclusions": gest.attrs["exclusions"],
+            "gesture_conf_by_scenario": {
+                f"{p}/{sc}": {"label": str(d["gesture"].iloc[0]), "windows": int(len(d)),
+                              "median": _r(d["gesture_conf"].median()),
+                              "share_ge_0_8": _r((d["gesture_conf"] >= 0.8).mean())}
+                for (p, sc), d in gest.groupby(["person", "scenario"])},
             "vitals_csv": str(vitals_csv),
             "vitals_windows": {k: int(v) for k, v in vit["label"].value_counts().items()},
             "n_patients": int(vit["patient"].nunique()),

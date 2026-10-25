@@ -59,6 +59,16 @@ def _replay_rows(replay_dir: Path):
     return out
 
 
+def _replay_windows(rows, baseline_hr):
+    """(hr_delta, spo2) of every window ReplayBio produces over one loop (1-s steps, 3-s rolling mean)."""
+    n, out = len(rows), []
+    for pos in range(n):
+        w = [rows[(pos - k) % n] for k in range(2, -1, -1)]
+        hr = int(round(sum(r[0] for r in w) / 3))
+        out.append((hr - baseline_hr, int(round(sum(r[1] for r in w) / 3))))
+    return out
+
+
 def four_case(model_json: Path, pairs_csv: Path, replay: dict):
     """Model and rule on (no palm / palm) x (rest / exertion replay), using median gesture features."""
     if not (model_json.exists() and pairs_csv.exists() and len(replay) == 2):
@@ -77,8 +87,14 @@ def four_case(model_json: Path, pairs_csv: Path, replay: dict):
                      "hr_delta": hr - meta["baseline_hr"], "spo2": float(np.mean([r[1] for r in rows]))}
             p = model.predict_proba(feats)
             expected = ("routine" if g == "no_gesture" else "urgent" if kind == "rest" else "critical")
+            # every 3-s window the node sees over one replay loop (node.bio.replay.ReplayBio)
+            hits = []
+            for w in _replay_windows(rows, meta["baseline_hr"]):
+                pw = model.predict_proba({**feats, "hr_delta": float(w[0]), "spo2": float(w[1])})
+                hits.append(max(pw, key=pw.get) == expected)
             cases.append({"case": f"{palm} + {kind} replay", "features": feats, "proba": p,
-                          "model": max(p, key=p.get), "rule": rule_level(feats), "expected": expected})
+                          "model": max(p, key=p.get), "rule": rule_level(feats), "expected": expected,
+                          "windows_ok": sum(hits), "windows": len(hits)})
     return cases
 
 
@@ -109,6 +125,18 @@ def discussion(m: dict, cases) -> list[str]:
     fpr = mean["model"]["alert_fpr"]["mean"]
     out.append(f"- **False alerts.** The model raised an alert for {pct(fpr)} of routine pairs (rule: "
                f"{pct(mean['rule']['alert_fpr']['mean'])}).")
+    by_sc = m["dataset"].get("gesture_conf_by_scenario", {})
+    false_hi = {k: v for k, v in by_sc.items() if v["label"] == "no_gesture" and v["share_ge_0_8"] >= 0.5}
+    missed = {k: v for k, v in by_sc.items() if v["label"] == "gesture" and v["share_ge_0_8"] < 0.5}
+    if false_hi:
+        out.append("- **Where the false alerts come from.** No-gesture scenarios where most windows still scored "
+                   "gesture_conf ≥ 0.8: " + "; ".join(f"{k} ({pct(v['share_ge_0_8'])} of {v['windows']} windows, median "
+                   f"{v['median']:.2f})" for k, v in false_hi.items())
+                   + ". Labels come from the scenario and were not changed; the gesture detector (uncalibrated "
+                   "defaults) could not tell this resting hand from a raised palm.")
+    if missed:
+        out.append("- **Gestures the detector mostly missed:** " + "; ".join(
+            f"{k} ({pct(v['share_ge_0_8'])} of windows ≥ 0.8, median {v['median']:.2f})" for k, v in missed.items()) + ".")
     worst = min(m["folds"], key=lambda f: f["model"]["accuracy"])
     best = max(m["folds"], key=lambda f: f["model"]["accuracy"])
     out.append(f"- **Spread between folds.** Model accuracy ranged from {f3(worst['model']['accuracy'])} "
@@ -169,6 +197,13 @@ def build(results_dir, models_dir, replay_dir) -> str:
     L += _table(["participant", "gesture windows", "no_gesture windows"],
                 [[p, v.get("gesture", 0), v.get("no_gesture", 0)] for p, v in ds["gesture_windows_per_person"].items()])
     ex = ds["gesture_exclusions"]
+    ad = ex.get("attempts_dropped")
+    if ad:
+        L += ["", f"Redone trials: {ad['total']} attempt(s) dropped, keeping one attempt per trial "
+                  f"({len(ad['flagged_discarded'])} flagged as discarded by the operator"
+                  + (f": {', '.join(ad['flagged_discarded'])}" if ad["flagged_discarded"] else "")
+                  + f"; {len(ad['unflagged_duplicates'])} unflagged duplicate(s) dropped as older attempts"
+                  + (f": {', '.join(ad['unflagged_duplicates'])}" if ad["unflagged_duplicates"] else "") + ")."]
     L += ["", f"Dropped before pairing: {ex['first_window']} first windows, {ex['discarded_windows']} windows from "
               f"{ex['discarded_trials']} discarded trial(s). Final model trained on {m['final']['n_pairs']} pairs "
               f"({', '.join(f'{k} {v}' for k, v in m['final']['windows_per_label'].items())}).", ""]
@@ -179,7 +214,10 @@ def build(results_dir, models_dir, replay_dir) -> str:
           f"- **Evaluation:** leave-one-participant-out × BIDMC patient-grouped split: patients in "
           f"{m['split']['vitals_folds']} groups, each with both normal and abnormal patients; each of the "
           f"{len(m['folds'])} folds holds out one participant **and** one patient group, so test pairs never share "
-          "a person or an ICU patient with training pairs.",
+          "a person or an ICU patient with training pairs. With "
+          f"{len(ds['participants'])} participants, leave-one-participant-out has only {len(ds['participants'])} "
+          f"folds (× {m['split']['vitals_folds']} patient groups = {len(m['folds'])} folds in total), so each model "
+          f"is trained on the gestures of {'a single participant' if len(ds['participants']) == 2 else 'the other participants'}.",
           "- **Baselines on the same test pairs:** fixed rule (critical if gesture_conf ≥ 0.8 and ΔHR ≥ 15; urgent "
           "if gesture_conf ≥ 0.8; else routine) and gesture only (urgent if gesture_conf ≥ 0.8, else routine).", ""]
 
@@ -221,10 +259,11 @@ def build(results_dir, models_dir, replay_dir) -> str:
     if cases:
         L += ["Median gesture_conf/tremor of the gesture and no_gesture windows, with the mean HR/SpO₂ of each replay "
               "file:", ""]
-        L += _table(["Case", "gesture_conf", "ΔHR", "SpO₂", "p(routine/urgent/critical)", "Model", "Rule", "Expected"],
+        L += _table(["Case", "gesture_conf", "ΔHR", "SpO₂", "p(routine/urgent/critical)", "Model", "Rule", "Expected",
+                     "Model = expected, every replay window"],
                     [[x["case"], f"{x['features']['gesture_conf']:.2f}", f"{x['features']['hr_delta']:+.0f}",
                       f"{x['features']['spo2']:.1f}", " / ".join(f"{x['proba'][c]:.2f}" for c in CLASSES),
-                      x["model"], x["rule"], x["expected"]] for x in cases])
+                      x["model"], x["rule"], x["expected"], f"{x['windows_ok']}/{x['windows']}"] for x in cases])
         L.append("")
     else:
         L += ["Four-case check not available (needs model.json, final_pairs.csv and both replay files).", ""]

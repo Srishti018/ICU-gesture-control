@@ -1,0 +1,7 @@
+fold,test_person,test_group,n_train,n_test,model_accuracy,model_macro_f1,model_alert_recall,model_alert_fpr,model_critical_precision,model_critical_recall,rule_accuracy,rule_macro_f1,rule_alert_recall,rule_alert_fpr,rule_critical_precision,rule_critical_recall,gesture_only_accuracy,gesture_only_macro_f1,gesture_only_alert_recall,gesture_only_alert_fpr,gesture_only_critical_precision,gesture_only_critical_recall
+0,P1,0,324,324,0.9105,0.9121,0.8796,0.0185,0.9794,0.8796,0.7716,0.7613,0.9074,0.0,0.8056,0.537,0.6358,0.52,0.9074,0.0,,0.0
+1,P1,1,324,324,0.8272,0.82,0.8194,0.0,1.0,0.5926,0.7315,0.7049,0.9074,0.0,0.8444,0.3519,0.6358,0.52,0.9074,0.0,,0.0
+2,P1,2,324,324,0.8858,0.884,0.8889,0.0,0.8829,0.9074,0.8272,0.8215,0.9074,0.0,0.8974,0.6481,0.6358,0.52,0.9074,0.0,,0.0
+3,P2,0,324,324,0.7716,0.7648,1.0,0.4444,0.7961,0.7593,0.6883,0.6911,0.9722,0.3056,0.6522,0.5556,0.5556,0.464,0.9722,0.3056,,0.0
+4,P2,1,324,324,0.7099,0.7068,1.0,0.4444,0.8378,0.5741,0.6204,0.6041,0.9722,0.3056,0.6383,0.2778,0.5556,0.464,0.9722,0.3056,,0.0
+5,P2,2,324,324,0.8086,0.8028,1.0,0.4074,0.7105,1.0,0.7469,0.7484,0.9722,0.3056,0.7579,0.6667,0.5556,0.464,0.9722,0.3056,,0.0

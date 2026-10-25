@@ -37,6 +37,19 @@ def test_load_gestures_drops_first_window_and_flags_synthetic(gestures_dir):
     assert len(g) == 72 * 9
 
 
+def test_unflagged_duplicate_attempt_keeps_latest(gestures_dir, tmp_path):
+    import shutil
+    for f in gestures_dir.glob("*_windows.csv"):
+        shutil.copy(f, tmp_path / f.name)
+    first = sorted(tmp_path.glob("P1_N_REST_T1_*_windows.csv"))[0]
+    shutil.copy(first, tmp_path / first.name.replace("20261025-", "20261024-"))  # older, not flagged
+    g = tc.load_gestures(tmp_path)
+    dropped = g.attrs["exclusions"]["attempts_dropped"]
+    assert dropped["unflagged_duplicates"] == [first.name.replace("20261025-", "20261024-")[:-len("_windows.csv")]]
+    assert dropped["total"] == 1
+    assert len(g) == 72 * 9
+
+
 def test_compose_pairing_rule_and_balance(gestures_dir):
     gest, vit = tc.load_gestures(gestures_dir), tc.load_vitals(VITALS)
     pairs = tc.compose(gest, vit, np.random.default_rng(0))
@@ -134,6 +147,8 @@ def test_report_generated_from_outputs(run_out, tmp_path):
 def test_report_refuses_synthetic_into_docs(run_out):
     from ml import report
     out, _ = run_out
+    doc = REPO_ROOT / "docs" / "ML_RESULTS.md"
+    before = doc.read_bytes() if doc.exists() else None
     with pytest.raises(SystemExit, match="refusing"):
         report.main(["--results", str(out / "results"), "--models", str(out / "models")])
-    assert not (REPO_ROOT / "docs" / "ML_RESULTS.md").exists()
+    assert (doc.read_bytes() if doc.exists() else None) == before

@@ -1,6 +1,6 @@
 # Report notes — facts for updating the course report
 
-Facts only, taken from the code and docs in this repository (Sun 25 Oct 2026). Each section says where to check the details. **Results are pending**: see the clearly marked section below.
+Facts only, taken from the code and docs in this repository (Sun 25 Oct 2026). Each section says where to check the details. Results are in the last section, generated from `ml/results/` (full write-up: `docs/ML_RESULTS.md`).
 
 ---
 
@@ -76,7 +76,7 @@ Source: `node/vision/geometry.py`, `docs/ROLE_A_NOTES.md`. MediaPipe landmarks: 
 ## 4. The composed dataset
 
 - **Why composed:** the MAX30100 sensor saturates in IR, so no usable vitals could be recorded together with the gestures. The dataset is therefore **composed from two independent sources that were not recorded at the same time**:
-  1. **Gestures:** our Pi camera, 3 healthy team members (P1–P3). Gesture-only protocol (`python -m ml.collect.session --bio none`): 24 trials of 30 s per person in a fixed shuffled order seeded by the person code, with 10-s pauses. Each 30-s trial is cut into 3-s windows.
+  1. **Gestures:** our Pi camera, 2 healthy team members (P1, P2). A third participant was planned but not recorded. Gesture-only protocol (`python -m ml.collect.session --bio none`): 24 trials of 30 s per person in a fixed shuffled order seeded by the person code, with 10-s pauses. Each 30-s trial is cut into 3-s windows.
      - 12 `gesture` trials: G_PALM ×6, G_PALM_DIM ×2 (lights dimmed), G_WEAK ×2 (fingers half bent), G_PALM_SHAKY ×2.
      - 12 `no_gesture` trials: N_REST ×4, N_SCRATCH ×4, N_OTHER ×2 (fist, pointing, thumbs up), N_NOHAND ×1, N_REST_SHAKY ×1.
      - The label is fixed by the scenario before recording. No images or video are saved.
@@ -91,7 +91,7 @@ Source: `node/vision/geometry.py`, `docs/ROLE_A_NOTES.md`. MediaPipe landmarks: 
   - Each gesture window is used once with a normal and once with an abnormal vitals window, so urgent and critical differ only in the vitals.
   - Classes are balanced and the seed is fixed (42).
   - The first window of each trial and redone trials are dropped.
-- **Evaluation:** leave-one-participant-out × BIDMC patient-grouped split. Patients are split into 3 groups, each containing both normal and abnormal patients, giving 9 folds. In every fold the test pairs share neither a participant nor an ICU patient with the training pairs.
+- **Evaluation:** leave-one-participant-out × BIDMC patient-grouped split. With 2 participants, leave-one-participant-out has only **2 folds**, so each model learns the gestures of a single person. Patients are split into 3 groups, each containing both normal and abnormal patients, giving 2 × 3 = 6 folds. In every fold the test pairs share neither a participant nor an ICU patient with the training pairs.
   - The model, the fixed rule and the gesture-only baseline are scored on the same test pairs.
   - A random split is reported for comparison only.
   - No hyper-parameter tuning: StandardScaler + LogisticRegression (C = 1, balanced).
@@ -104,7 +104,7 @@ Source: `node/vision/geometry.py`, `docs/ROLE_A_NOTES.md`. MediaPipe landmarks: 
 ## 5. Limitations (state them honestly)
 
 - **Composed data:** gestures and vitals come from different people and different times, and the pairing rule creates the labels. The results measure how well the model combines the two signals, not real patient behaviour.
-- **3 healthy participants** acted out the gestures. Real ICU patients move differently (weakness, sedation, lines, dressings, lying down).
+- **Only 2 healthy participants** acted out the gestures, so leave-one-participant-out has only 2 folds and each fold's model learned from one person. Real ICU patients move differently (weakness, sedation, lines, dressings, lying down).
 - **NEWS2 as ground truth:** an early-warning score, not a diagnosis. Excluding the borderline 1-point bands makes the classes easier to separate than in practice.
 - **Low HR excluded** (HR ≤ 50): with a linear ΔHR feature, logistic regression cannot treat both low and high HR as abnormal. Bradycardia is therefore not detected.
 - **ΔHR uses a fixed 75 bpm reference**, not each patient's own baseline.
@@ -134,21 +134,66 @@ Source: `node/vision/geometry.py`, `docs/ROLE_A_NOTES.md`. MediaPipe landmarks: 
 
 ---
 
-## ⚠️ RESULTS: pending
+## RESULTS
 
-**Not filled in yet.** The gesture recordings for P1–P3 have not arrived. When they do:
+Generated on 25 Oct 2026 by `python -m ml.train_composed` and `python -m ml.report` from the real gesture recordings (P1, P2) and BIDMC. Full tables and charts: `docs/ML_RESULTS.md`, `ml/results/`.
 
-```
-python -m ml.train_composed --gestures ml/data/raw --vitals ml/data/public/bidmc_news2_windows.csv
-python -m ml.report
-```
+### Data
 
-Then copy the numbers from `docs/ML_RESULTS.md` (generated from `ml/results/metrics.json`) into the report:
-- mean ± SD accuracy, macro-F1, alert recall and FPR, and critical recall for the model, the rule and gesture-only
-- the per-fold table
-- the pooled confusion matrices (`ml/results/confusion.png`)
-- the random-split comparison
-- the coefficients (`ml/results/coefficients.png`)
-- the four-case check on the demo replay inputs
+| Participant | gesture windows | no_gesture windows |
+| --- | --- | --- |
+| P1 | 108 | 108 |
+| P2 | 108 | 108 |
 
-Do not quote any number from a synthetic or test run.
+- **Trials:** 24 per participant, all 9 scenarios complete. Each 30-s trial has 10 windows; the first window of each trial is dropped.
+- **Redone trials:** 4 attempts were redone and dropped. All 4 were flagged as discarded by the operator (`P1_N_REST_T1` ×2, `P1_G_WEAK_T1` ×1, `P2_G_WEAK_T2` ×1). No unflagged duplicates.
+- **Validation:** `validate_data` passed (exit 0) with no flags.
+- **Vitals:** 3,392 normal and 1,879 abnormal BIDMC windows from 49 patients.
+- **Final model:** 648 pairs, 216 per class.
+
+### Comparison: mean ± SD over 6 folds (2 participants × 3 patient groups)
+
+| Method | Accuracy | Macro-F1 | Alert recall | Alert FPR | Critical precision | Critical recall |
+| --- | --- | --- | --- | --- | --- | --- |
+| Fusion model (LR) | 0.819 ± 0.074 | 0.815 ± 0.076 | 0.931 ± 0.079 | 0.219 ± 0.234 | 0.868 ± 0.110 | 0.785 ± 0.174 |
+| Fixed rule | 0.731 ± 0.071 | 0.722 ± 0.074 | 0.940 ± 0.035 | 0.153 ± 0.167 | 0.766 ± 0.104 | 0.506 ± 0.158 |
+| Gesture only | 0.596 ± 0.044 | 0.492 ± 0.031 | 0.940 ± 0.035 | 0.153 ± 0.167 | — | 0.000 |
+
+- **Per fold:** the model was more accurate than the rule in **6 of 6** folds. Model accuracy ranged from 0.710 to 0.910 (P1 held out: 0.827–0.910; P2 held out: 0.710–0.809).
+- **Pooled confusion matrix of the model** (rows = true routine/urgent/critical): [506 81 61], [40 577 31], [49 90 509].
+- **Where the rule fails:** it called 281 of 648 critical pairs only "urgent", because 68.9% of the abnormal vitals windows are abnormal through low SpO₂ alone, which the rule does not use.
+- **Random 5-fold split** (comparison only): accuracy 0.884, macro-F1 0.883. This is 6.5 points higher than the grouped split, because the same person and patient appear in both training and test.
+
+### Final model coefficients (standardised features)
+
+| Class | gesture_conf | tremor | hr_delta | spo2 | intercept |
+| --- | --- | --- | --- | --- | --- |
+| routine | −1.744 | +0.865 | +0.069 | −0.197 | +0.687 |
+| urgent | +0.937 | −0.488 | −1.169 | +2.010 | −0.474 |
+| critical | +0.808 | −0.377 | +1.100 | −1.813 | −0.213 |
+
+- **Critical vs urgent:** mostly SpO₂ (−3.82) and ΔHR (+2.27); gesture_conf barely differs (−0.13).
+- **Urgent vs routine:** gesture_conf (+2.68), and also SpO₂ (+2.21) and ΔHR (−1.24). Under the pairing rule, half the routine pairs carry abnormal vitals while urgent pairs never do.
+- **Runtime parity:** the NumPy runtime matches scikit-learn to 2.2e-16.
+
+### Four-case check (demo replay files)
+
+The median gesture features of each class were combined with every 3-s window `ReplayBio` produces over one loop of each BIDMC replay file.
+
+| Case | gesture_conf | ΔHR | SpO₂ | p(routine / urgent / critical) | Model | Rule | Model correct on every window |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| no palm + rest (bidmc_39) | 0.10 | +0 | 97.0 | 0.98 / 0.02 / 0.00 | routine | routine | 60/60 |
+| no palm + abnormal (bidmc_52) | 0.10 | +40 | 92.5 | 0.88 / 0.00 / 0.12 | routine | routine | 90/90 |
+| palm + rest (bidmc_39) | 0.96 | +0 | 97.0 | 0.05 / 0.90 / 0.05 | urgent | urgent | 60/60 |
+| palm + abnormal (bidmc_52) | 0.96 | +40 | 92.5 | 0.01 / 0.00 / 0.99 | critical | critical | 90/90 |
+
+### Findings to discuss in the report
+
+- **False alerts come from one participant's resting hand.**
+  - All routine-pair false alerts happened in the folds where P2 was held out: model FPR 0.41–0.44, rule 0.31. In P1's folds they were 0.00–0.02.
+  - P2's `N_REST` windows scored gesture_conf ≥ 0.8 in 66.7% of cases (median 0.84), and `N_REST_SHAKY` in 100% (median 0.93). For comparison, P1's `N_REST` median was 0.11.
+  - The labels come from the scenario and were **not changed**. The uncalibrated gesture detector could not tell P2's resting hand from a raised palm.
+  - This is the main weakness to report, and the reason gesture-threshold calibration matters.
+- **The model has a higher alert FPR than the rule** (0.219 vs 0.153). It also gives more critical recall (0.785 vs 0.506) and higher accuracy.
+- **`G_WEAK` (half-bent fingers) is the hardest gesture:** P1's windows were split evenly around the 0.8 threshold (median 0.60). P2's mostly passed (median 0.92).
+- **Results come from 2 participants, so any statement about new users is weak.** The SD between folds (0.074 accuracy) is mostly the difference between P1 and P2.
