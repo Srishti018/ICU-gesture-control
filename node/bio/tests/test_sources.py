@@ -71,11 +71,15 @@ def test_replay_rejects_gaps(tmp_path):
         ReplayBio("rest", replay_dir=tmp_path)
 
 
-def test_placeholder_files_load_and_behave():
+def test_replay_files_load_and_behave():
     clock = Clock()
     rest = ReplayBio("rest", clock=clock)
     ex = ReplayBio("exertion", clock=clock)
-    assert rest.meta["source"] == ex.meta["source"] == "synthetic-placeholder"
+    assert rest.meta["source"] == ex.meta["source"] == "BIDMC (PhysioNet)"
+    assert rest.baseline_hr() == ex.baseline_hr() == 75
+    assert len(rest.rows) == 60 and len(ex.rows) == 90
+    assert all(spo2 >= 96 and 51 <= hr <= 90 for hr, spo2 in rest.rows)    # NEWS2-normal every second
+    assert all(spo2 <= 93 or hr >= 111 for hr, spo2 in ex.rows)            # NEWS2-abnormal every second
     rest.start()
     ex.start()
     for _ in range(30):
